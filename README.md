@@ -61,6 +61,7 @@ agent_id: conversation.your_llm_agent
 | `entities` | string[] | `[]` | Extra HA entities (people, solar, trash, windows, oil, vacuum/mower, …) |
 | `cameras` | string[] | `[]` | Camera entities shown as live feeds at the bottom |
 | `birthdays` | `{name,date}[]` | `[]` | Birthdays as `YYYY-MM-DD`; surfaced if within 14 days |
+| `schedules` | object[] | `[]` | School/work timetables; today’s lessons go into the prompt |
 | `context_notes` | string | — | Free-text household context for the prompt |
 | `forecast_type` | `daily` \| `hourly` \| `twice_daily` \| `none` | `daily` | Forecast subscription type |
 | `horizon_hours` | number | `24` | Calendar look-ahead |

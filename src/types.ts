@@ -6,6 +6,25 @@ export interface BirthdayConfig {
   date: string;
 }
 
+export interface ScheduleLesson {
+  start: string;
+  end: string;
+  subject: string;
+}
+
+export interface DayBriefSchedule {
+  name: string;
+  note?: string;
+  valid_from?: string;
+  monday?: ScheduleLesson[];
+  tuesday?: ScheduleLesson[];
+  wednesday?: ScheduleLesson[];
+  thursday?: ScheduleLesson[];
+  friday?: ScheduleLesson[];
+  saturday?: ScheduleLesson[];
+  sunday?: ScheduleLesson[];
+}
+
 export interface DayBriefCardConfig {
   type?: string;
   title?: string;
@@ -14,6 +33,7 @@ export interface DayBriefCardConfig {
   entities?: string[];
   cameras?: string[];
   birthdays?: BirthdayConfig[];
+  schedules?: DayBriefSchedule[];
   forecast_type?: ForecastType;
   horizon_hours?: number;
   agent_id?: string;

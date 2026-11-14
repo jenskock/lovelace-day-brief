@@ -3,6 +3,7 @@ import type {
   BirthdayConfig,
   CalendarEvent,
   ConversationProcessResult,
+  DayBriefSchedule,
   HomeAssistant,
   SummaryMode,
   WeatherForecastEntry,
@@ -13,6 +14,7 @@ import {
   type UpcomingBirthday,
 } from "./birthdays";
 import type { EntitySnapshot } from "./entities";
+import { buildSchedulePromptLines } from "./schedule";
 import {
   formatTemperature,
   type WeatherSnapshot,
@@ -658,6 +660,7 @@ export function buildSummaryDigest(options: {
   events: CalendarEvent[];
   entities: EntitySnapshot[];
   birthdays?: BirthdayConfig[];
+  schedules?: DayBriefSchedule[];
   now: Date;
   locale: string;
   timeZone: string;
@@ -670,6 +673,7 @@ export function buildSummaryDigest(options: {
     events,
     entities,
     birthdays = [],
+    schedules = [],
     now,
     locale,
     timeZone,
@@ -725,6 +729,12 @@ export function buildSummaryDigest(options: {
     ...calendarBirthdayHints(events, german),
   ];
   const schoolDay = isSchoolDay(now, timeZone, contextNotes, part);
+  const scheduleLines = buildSchedulePromptLines(
+    schedules,
+    now,
+    timeZone,
+    german,
+  );
 
   const agendaLines =
     events.length === 0
@@ -759,15 +769,20 @@ export function buildSummaryDigest(options: {
     section(
       german ? "SCHULTAG" : "SCHOOL_DAY",
       [
-        schoolDay
+        schoolDay || scheduleLines.length
           ? german
-            ? "ja — Wochentag und Schulkontext"
-            : "yes — weekday with school context"
+            ? "ja — Wochentag und/oder Stundenplan vorhanden"
+            : "yes — weekday and/or schedule present"
           : german
             ? "nein"
             : "no",
       ],
       "",
+    ),
+    section(
+      german ? "STUNDENPLAN" : "SCHEDULE",
+      scheduleLines,
+      german ? "Kein Stundenplan konfiguriert." : "No schedule configured.",
     ),
     section(
       german ? "WETTER" : "WEATHER",

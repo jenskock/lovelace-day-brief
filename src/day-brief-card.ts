@@ -89,6 +89,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       entities: [],
       cameras: [],
       birthdays: [],
+      schedules: [],
       ...config,
     };
   }
@@ -264,6 +265,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       this._config.summary_prompt ?? "",
       this._config.context_notes ?? "",
       JSON.stringify(this._config.birthdays ?? []),
+      JSON.stringify(this._config.schedules ?? []),
     ].join("|");
   }
 
@@ -427,6 +429,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       events: this._events,
       entities: this._entities,
       birthdays: this._config.birthdays,
+      schedules: this._config.schedules,
       now: new Date(),
       locale,
       timeZone,

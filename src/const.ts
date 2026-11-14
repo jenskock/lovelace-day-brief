@@ -1,4 +1,4 @@
-export const CARD_VERSION = "1.4.0";
+export const CARD_VERSION = "1.5.0";
 export const CARD_NAME = "Day Brief";
 export const CARD_TYPE = "day-brief-card";
 export const EDITOR_NAME = "day-brief-card-editor";
@@ -18,7 +18,7 @@ MUSS enthalten (wenn Daten da sind)
 3) Regen-/Schneeprognose der nächsten Tage, falls nass
 4) Wichtige Termine heute
 5) Geburtstage in den nächsten 14 Tagen herzlich erwähnen (Alter nennen, wenn bekannt)
-6) An Schultagen morgens kurz den Schulalltag mitdenken, falls [SCHULTAG] = ja
+6) An Schultagen: nutze [STUNDENPLAN] (heutige Fächer, jetzt/als Nächstes), besonders morgens
 7) Solar kurz, falls Werte verfügbar
 8) Müll nur wenn relevant
 9) Offene Fenster bei Kälte kurz erwähnen
@@ -26,8 +26,8 @@ MUSS enthalten (wenn Daten da sind)
 11) Staubsauger/Mäher nur wenn Handlungsbedarf (nicht idle/docked)
 
 HAUSHALT
-Nutze [HAUSHALT] und [GEBURTSTAGE] nur als Faktenquelle.
-Erfinde keine Personen, Tiere oder Termine.
+Nutze [HAUSHALT], [GEBURTSTAGE] und [STUNDENPLAN] nur als Faktenquelle.
+Erfinde keine Personen, Tiere, Fächer oder Termine.
 
 DARF NICHT
 - Englisch schreiben
