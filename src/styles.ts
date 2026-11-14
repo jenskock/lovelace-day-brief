@@ -127,11 +127,13 @@ export const cardStyles = css`
     border-radius: 18px;
     background: color-mix(
       in srgb,
-      var(--ha-card-background, var(--card-background-color, #fff)) 55%,
-      transparent
+      var(--primary-text-color) 7%,
+      var(--ha-card-background, var(--card-background-color, #fff))
     );
     border: 1px solid
-      color-mix(in srgb, var(--divider-color, #000) 22%, transparent);
+      color-mix(in srgb, var(--primary-text-color) 18%, transparent);
+    box-shadow: inset 0 1px 0
+      color-mix(in srgb, var(--primary-text-color) 6%, transparent);
   }
 
   .section-title {
@@ -140,7 +142,11 @@ export const cardStyles = css`
     font-weight: 650;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--secondary-text-color);
+    color: color-mix(
+      in srgb,
+      var(--primary-text-color) 55%,
+      var(--secondary-text-color)
+    );
   }
 
   .weather-hero {
@@ -162,7 +168,11 @@ export const cardStyles = css`
   .weather-place {
     margin: 4px 0 0;
     font-size: 0.9rem;
-    color: var(--secondary-text-color);
+    color: color-mix(
+      in srgb,
+      var(--primary-text-color) 45%,
+      var(--secondary-text-color)
+    );
   }
 
   .temp {
@@ -185,8 +195,12 @@ export const cardStyles = css`
     padding: 4px 10px;
     border-radius: 999px;
     font-size: 0.82rem;
-    color: var(--secondary-text-color);
-    background: color-mix(in srgb, var(--primary-text-color) 6%, transparent);
+    color: color-mix(
+      in srgb,
+      var(--primary-text-color) 50%,
+      var(--secondary-text-color)
+    );
+    background: color-mix(in srgb, var(--primary-text-color) 10%, transparent);
   }
 
   .forecast {
@@ -201,14 +215,20 @@ export const cardStyles = css`
     padding: 8px 6px;
     border-radius: 12px;
     text-align: center;
-    background: color-mix(in srgb, var(--primary-text-color) 5%, transparent);
+    background: color-mix(in srgb, var(--primary-text-color) 9%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--primary-text-color) 10%, transparent);
   }
 
   .forecast-day,
   .forecast-cond {
     display: block;
     font-size: 0.75rem;
-    color: var(--secondary-text-color);
+    color: color-mix(
+      in srgb,
+      var(--primary-text-color) 40%,
+      var(--secondary-text-color)
+    );
     text-transform: capitalize;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -238,7 +258,7 @@ export const cardStyles = css`
     align-items: start;
     padding: 10px 0;
     border-top: 1px solid
-      color-mix(in srgb, var(--divider-color, #000) 18%, transparent);
+      color-mix(in srgb, var(--primary-text-color) 14%, transparent);
   }
 
   .event:first-child {
@@ -248,8 +268,13 @@ export const cardStyles = css`
 
   .event-time {
     font-size: 1rem;
+    font-weight: 550;
     font-variant-numeric: tabular-nums;
-    color: var(--secondary-text-color);
+    color: color-mix(
+      in srgb,
+      var(--primary-text-color) 55%,
+      var(--secondary-text-color)
+    );
   }
 
   .event-body {
@@ -259,7 +284,7 @@ export const cardStyles = css`
   .event-title {
     margin: 0;
     font-size: 1.15rem;
-    font-weight: 550;
+    font-weight: 600;
     color: var(--primary-text-color);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -269,7 +294,11 @@ export const cardStyles = css`
   .event-cal {
     margin: 3px 0 0;
     font-size: 0.9rem;
-    color: var(--secondary-text-color);
+    color: color-mix(
+      in srgb,
+      var(--primary-text-color) 40%,
+      var(--secondary-text-color)
+    );
   }
 
   .context-toggle {
