@@ -12,7 +12,11 @@ import {
   invalidateSummaryCache,
   resolveSummary,
 } from "./data/summary";
-import { speakSummary, stopSpeaking } from "./data/tts";
+import {
+  speakSummary,
+  stopSpeaking,
+  unlockAudioForGesture,
+} from "./data/tts";
 import {
   entityChanged,
   formatTemperature,
@@ -385,21 +389,29 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       this._speaking = false;
       return;
     }
+    // Unlock WebKit audio during the tap — before awaiting TTS generate.
+    unlockAudioForGesture();
     this._speaking = true;
     try {
       await speakSummary({
         hass: this.hass,
         text: this._summary,
-        language: this.hass?.locale?.language?.startsWith("de")
-          ? "de-DE"
-          : this.hass?.locale?.language,
+        // Engine locale catalog; spoken language comes from the text.
+        language: "en",
         ttsEntity: this._config.tts_entity,
         mediaPlayer: this._config.tts_media_player,
       });
     } catch (error) {
-      this._pushError(
-        error instanceof Error ? `TTS: ${error.message}` : "TTS failed",
-      );
+      const message =
+        error instanceof Error
+          ? error.message
+          : typeof error === "object" &&
+              error &&
+              "message" in error &&
+              typeof (error as { message: unknown }).message === "string"
+            ? (error as { message: string }).message
+            : "TTS failed";
+      this._pushError(`TTS: ${message}`);
     } finally {
       this._speaking = false;
     }
