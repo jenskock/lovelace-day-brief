@@ -69,7 +69,8 @@ agent_id: conversation.your_llm_agent
 | `summary_mode` | `auto` \| `ai` \| `local` | `auto` | AI when available, else local text |
 | `summary_prompt` | string | built-in default | Optional override of the system prompt |
 | `cache_minutes` | number | `15` | Cache AI responses for identical digests |
-| `tts_entity` | string | — | Optional `media_player.*` for HA TTS (else browser speech) |
+| `tts_entity` | string | — | TTS engine (e.g. Requesty via OpenAI TTS HACS); plays on the dashboard device |
+| `tts_media_player` | string | — | Optional extra `media_player.*` to also announce on |
 | `keep_awake` | boolean | `true` | Subtle Echo Show / Silk keep-awake control |
 | `title` | string | — | Optional card title override |
 

@@ -41,8 +41,10 @@ export interface DayBriefCardConfig {
   summary_prompt?: string;
   context_notes?: string;
   cache_minutes?: number;
-  /** Optional media_player for HA TTS; otherwise browser speechSynthesis. */
+  /** TTS engine entity (e.g. Requesty OpenAI TTS). Plays on the dashboard device. */
   tts_entity?: string;
+  /** Optional extra media_player to also announce on. */
+  tts_media_player?: string;
   /** Play subtle silent audio after tap so Echo Show / Silk stays open. */
   keep_awake?: boolean;
 }

@@ -393,17 +393,15 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
         language: this.hass?.locale?.language?.startsWith("de")
           ? "de-DE"
           : this.hass?.locale?.language,
-        mediaPlayer: this._config.tts_entity,
+        ttsEntity: this._config.tts_entity,
+        mediaPlayer: this._config.tts_media_player,
       });
     } catch (error) {
       this._pushError(
         error instanceof Error ? `TTS: ${error.message}` : "TTS failed",
       );
     } finally {
-      // Browser utterance has no reliable end hook across Silk; clear soon.
-      window.setTimeout(() => {
-        this._speaking = false;
-      }, 1500);
+      this._speaking = false;
     }
   }
 
@@ -615,15 +613,20 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
             `
           : nothing}
 
-        <div class="sections">
-          <section>
+        <div class="split">
+          <section class="panel">
             <h3 class="section-title">Weather</h3>
             ${weather
               ? html`
-                  <div class="weather-row">
-                    <p class="condition">
-                      ${weatherConditionLabel(weather.condition)}
-                    </p>
+                  <div class="weather-hero">
+                    <div>
+                      <p class="condition">
+                        ${weatherConditionLabel(weather.condition)}
+                      </p>
+                      <p class="weather-place">
+                        ${weather.friendly_name ?? weather.entity_id}
+                      </p>
+                    </div>
                     <p class="temp">
                       ${formatTemperature(
                         weather.temperature,
@@ -631,12 +634,24 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
                       )}
                     </p>
                   </div>
-                  <p class="weather-meta">
-                    ${weather.friendly_name ?? weather.entity_id}
-                    ${typeof weather.humidity === "number"
-                      ? html` · ${weather.humidity}% humidity`
-                      : nothing}
-                  </p>
+                  ${typeof weather.humidity === "number" ||
+                  typeof weather.wind_speed === "number"
+                    ? html`
+                        <div class="chips">
+                          ${typeof weather.humidity === "number"
+                            ? html`<span class="chip"
+                                >${weather.humidity}% humidity</span
+                              >`
+                            : nothing}
+                          ${typeof weather.wind_speed === "number"
+                            ? html`<span class="chip"
+                                >${weather.wind_speed}
+                                ${weather.wind_speed_unit ?? ""}</span
+                              >`
+                            : nothing}
+                        </div>
+                      `
+                    : nothing}
                   ${this._forecast.length
                     ? html`
                         <div class="forecast">
@@ -646,15 +661,15 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
                                 <span class="forecast-day"
                                   >${this._forecastLabel(entry)}</span
                                 >
-                                <span class="forecast-cond"
-                                  >${weatherConditionLabel(
-                                    entry.condition ?? "",
-                                  )}</span
-                                >
                                 <span class="forecast-temp"
                                   >${formatTemperature(
                                     entry.temperature,
                                     weather.temperature_unit,
+                                  )}</span
+                                >
+                                <span class="forecast-cond"
+                                  >${weatherConditionLabel(
+                                    entry.condition ?? "",
                                   )}</span
                                 >
                               </div>
@@ -667,13 +682,13 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
               : html`<p class="empty">Configure a weather entity to begin.</p>`}
           </section>
 
-          <section>
-            <h3 class="section-title">Meetings</h3>
+          <section class="panel">
+            <h3 class="section-title">Calendar</h3>
             ${this._loadingEvents && this._events.length === 0
               ? html`<p class="empty loading">Loading calendars…</p>`
               : this._events.length === 0
                 ? html`<p class="empty">
-                    No meetings in the next
+                    Nothing in the next
                     ${this._config.horizon_hours ?? DEFAULT_HORIZON} hours.
                   </p>`
                 : html`
@@ -704,76 +719,76 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
                     </ul>
                   `}
           </section>
-
-          ${this._entities.length
-            ? html`
-                <section class="context">
-                  <button
-                    class="context-toggle"
-                    type="button"
-                    aria-expanded=${this._contextOpen ? "true" : "false"}
-                    @click=${() => {
-                      this._contextOpen = !this._contextOpen;
-                    }}
-                  >
-                    <span class="section-title">Context</span>
-                    <span class="context-meta"
-                      >${this._entities.length}
-                      ${this._entities.length === 1 ? "entity" : "entities"}</span
-                    >
-                    <span class="context-chevron" aria-hidden="true"
-                      >${this._contextOpen ? "▾" : "▸"}</span
-                    >
-                  </button>
-                  ${this._contextOpen
-                    ? html`
-                        <ul class="entity-list">
-                          ${this._entities.map(
-                            (entity) => html`
-                              <li class="entity-row">
-                                <span class="entity-name">${entity.name}</span>
-                                <span class="entity-state">${entity.state}</span>
-                              </li>
-                            `,
-                          )}
-                        </ul>
-                      `
-                    : nothing}
-                </section>
-              `
-            : nothing}
-
-          ${(this._config.cameras ?? []).length
-            ? html`
-                <section class="cameras">
-                  <h3 class="section-title">Cameras</h3>
-                  <div class="camera-grid">
-                    ${(this._config.cameras ?? []).map((entityId) => {
-                      const src = this._cameraSrc(entityId);
-                      return html`
-                        <button
-                          class="camera-tile"
-                          type="button"
-                          @click=${() => this._openMoreInfo(entityId)}
-                        >
-                          ${src
-                            ? html`<img
-                                class="camera-feed"
-                                src=${src}
-                                alt=${this._cameraName(entityId)}
-                              />`
-                            : html`<div class="camera-missing">No feed</div>`}
-                          <span class="camera-label"
-                            >${this._cameraName(entityId)}</span
-                          >
-                        </button>
-                      `;
-                    })}
-                  </div>
-                </section>
-              `
-            : nothing}
         </div>
+
+        ${(this._config.cameras ?? []).length
+          ? html`
+              <section class="cameras">
+                <h3 class="section-title">Cameras</h3>
+                <div class="camera-grid">
+                  ${(this._config.cameras ?? []).map((entityId) => {
+                    const src = this._cameraSrc(entityId);
+                    return html`
+                      <button
+                        class="camera-tile"
+                        type="button"
+                        @click=${() => this._openMoreInfo(entityId)}
+                      >
+                        ${src
+                          ? html`<img
+                              class="camera-feed"
+                              src=${src}
+                              alt=${this._cameraName(entityId)}
+                            />`
+                          : html`<div class="camera-missing">No feed</div>`}
+                        <span class="camera-label"
+                          >${this._cameraName(entityId)}</span
+                        >
+                      </button>
+                    `;
+                  })}
+                </div>
+              </section>
+            `
+          : nothing}
+
+        ${this._entities.length
+          ? html`
+              <section class="context">
+                <button
+                  class="context-toggle"
+                  type="button"
+                  aria-expanded=${this._contextOpen ? "true" : "false"}
+                  @click=${() => {
+                    this._contextOpen = !this._contextOpen;
+                  }}
+                >
+                  <span class="section-title">Context</span>
+                  <span class="context-meta"
+                    >${this._entities.length}
+                    ${this._entities.length === 1 ? "entity" : "entities"}</span
+                  >
+                  <span class="context-chevron" aria-hidden="true"
+                    >${this._contextOpen ? "▾" : "▸"}</span
+                  >
+                </button>
+                ${this._contextOpen
+                  ? html`
+                      <ul class="entity-list">
+                        ${this._entities.map(
+                          (entity) => html`
+                            <li class="entity-row">
+                              <span class="entity-name">${entity.name}</span>
+                              <span class="entity-state">${entity.state}</span>
+                            </li>
+                          `,
+                        )}
+                      </ul>
+                    `
+                  : nothing}
+              </section>
+            `
+          : nothing}
 
         ${this._errors.length
           ? html`

@@ -146,6 +146,10 @@ export class DayBriefCardEditor
     this._update({ tts_entity: this._value(ev) || undefined });
   }
 
+  private _onTtsMediaPlayer(ev: Event): void {
+    this._update({ tts_media_player: this._value(ev) || undefined });
+  }
+
   private _onKeepAwake(ev: Event): void {
     const checked = (ev.target as HTMLInputElement).checked;
     this._update({ keep_awake: checked });
@@ -381,17 +385,27 @@ export class DayBriefCardEditor
         </label>
 
         <label>
-          TTS media player (optional)
+          TTS engine entity
           <input
             type="text"
             .value=${this._config.tts_entity ?? ""}
-            placeholder="media_player.echo_show"
+            placeholder="tts.openai_tts_gpt_4o_mini_tts"
             @change=${this._onTtsEntity}
           />
           <span class="hint"
-            >Empty = browser speech. Set a media_player for Home Assistant
-            TTS.</span
+            >Use OpenAI TTS (HACS) via Requesty for best quality. Empty =
+            browser speech.</span
           >
+        </label>
+
+        <label>
+          Also play on media_player (optional)
+          <input
+            type="text"
+            .value=${this._config.tts_media_player ?? ""}
+            placeholder="media_player.sonos_wohnzimmer"
+            @change=${this._onTtsMediaPlayer}
+          />
         </label>
 
         <label class="check">

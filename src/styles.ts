@@ -132,79 +132,118 @@ export const cardStyles = css`
     background: var(--disabled-text-color, #9e9e9e);
   }
 
-  .sections {
+  .split {
     display: grid;
-    gap: 20px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 14px;
+    align-items: stretch;
+  }
+
+  @media (max-width: 720px) {
+    .split {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .panel {
+    min-width: 0;
+    padding: 16px;
+    border-radius: 18px;
+    background: color-mix(
+      in srgb,
+      var(--ha-card-background, var(--card-background-color, #fff)) 55%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--divider-color, #000) 22%, transparent);
   }
 
   .section-title {
-    margin: 0 0 10px;
-    font-size: 0.9rem;
-    letter-spacing: 0.04em;
+    margin: 0 0 12px;
+    font-size: 0.78rem;
+    font-weight: 650;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--secondary-text-color);
   }
 
-  .weather-row {
+  .weather-hero {
     display: flex;
-    align-items: baseline;
+    align-items: flex-end;
     justify-content: space-between;
     gap: 12px;
   }
 
   .condition {
     margin: 0;
-    font-size: 1.4rem;
-    font-weight: 550;
+    font-size: 1.35rem;
+    font-weight: 600;
+    line-height: 1.2;
     text-transform: capitalize;
     color: var(--primary-text-color);
   }
 
-  .temp {
-    margin: 0;
-    font-size: 2.1rem;
-    font-weight: 650;
-    color: var(--primary-text-color);
-  }
-
-  .weather-meta {
-    margin: 8px 0 0;
-    font-size: 1rem;
+  .weather-place {
+    margin: 4px 0 0;
+    font-size: 0.9rem;
     color: var(--secondary-text-color);
   }
 
-  .forecast {
+  .temp {
+    margin: 0;
+    font-size: 3.1rem;
+    font-weight: 650;
+    letter-spacing: -0.04em;
+    line-height: 0.9;
+    color: var(--primary-text-color);
+  }
+
+  .chips {
     display: flex;
-    gap: 10px;
-    margin-top: 12px;
-    overflow-x: auto;
-    padding-bottom: 2px;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .chip {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    color: var(--secondary-text-color);
+    background: color-mix(in srgb, var(--primary-text-color) 6%, transparent);
+  }
+
+  .forecast {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(58px, 1fr));
+    gap: 8px;
+    margin-top: 16px;
   }
 
   .forecast-item {
-    min-width: 72px;
-    padding: 10px 12px;
-    border-radius: 10px;
-    background: color-mix(
-      in srgb,
-      var(--primary-text-color) 6%,
-      transparent
-    );
+    min-width: 0;
+    padding: 8px 6px;
+    border-radius: 12px;
+    text-align: center;
+    background: color-mix(in srgb, var(--primary-text-color) 5%, transparent);
   }
 
   .forecast-day,
   .forecast-cond {
     display: block;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     color: var(--secondary-text-color);
     text-transform: capitalize;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .forecast-temp {
     display: block;
-    margin-top: 4px;
-    font-size: 1.05rem;
-    font-weight: 600;
+    margin: 4px 0 2px;
+    font-size: 0.95rem;
+    font-weight: 650;
     color: var(--primary-text-color);
   }
 
@@ -212,15 +251,23 @@ export const cardStyles = css`
     list-style: none;
     margin: 0;
     padding: 0;
-    display: grid;
-    gap: 12px;
+    max-height: 280px;
+    overflow: auto;
   }
 
   .event {
     display: grid;
-    grid-template-columns: 88px 1fr;
-    gap: 12px;
+    grid-template-columns: 78px minmax(0, 1fr);
+    gap: 10px;
     align-items: start;
+    padding: 10px 0;
+    border-top: 1px solid
+      color-mix(in srgb, var(--divider-color, #000) 18%, transparent);
+  }
+
+  .event:first-child {
+    padding-top: 0;
+    border-top: none;
   }
 
   .event-time {
@@ -310,8 +357,9 @@ export const cardStyles = css`
     text-align: right;
   }
 
-  .cameras {
-    margin-top: 2px;
+  .cameras,
+  .context {
+    margin-top: 16px;
   }
 
   .camera-grid {
