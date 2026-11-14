@@ -111,6 +111,11 @@ export class DayBriefCardEditor
     this._update({ summary_prompt: value || undefined });
   }
 
+  private _onContextNotes(ev: Event): void {
+    const value = this._value(ev).trim();
+    this._update({ context_notes: value || undefined });
+  }
+
   private _onCache(ev: Event): void {
     const n = Number(this._value(ev));
     this._update({
@@ -292,6 +297,16 @@ export class DayBriefCardEditor
         </label>
 
         <label>
+          Household / context notes
+          <textarea
+            rows="3"
+            placeholder="Familie: Jens, Jenny, Ella (Tochter). Hund: Milo."
+            .value=${this._config.context_notes ?? ""}
+            @change=${this._onContextNotes}
+          ></textarea>
+        </label>
+
+        <label>
           System prompt
           <textarea
             rows="5"
@@ -300,8 +315,9 @@ export class DayBriefCardEditor
             @change=${this._onPrompt}
           ></textarea>
           <span class="hint"
-            >Leer = starkes deutsches Standard-Prompt. Wetter, Termine, Solar,
-            Müll und Entities werden strukturiert angehängt.</span
+            >Leer = starkes deutsches Standard-Prompt. Wetter, Vorhersage,
+            Termine, Solar, Müll und Entities werden strukturiert
+            angehängt.</span
           >
         </label>
 

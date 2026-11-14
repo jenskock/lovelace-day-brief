@@ -32,9 +32,9 @@ import type {
 
 const DEFAULT_FORECAST: ForecastType = "daily";
 const DEFAULT_HORIZON = 24;
-const DEFAULT_CACHE = 30;
+const DEFAULT_CACHE = 15;
 const DEFAULT_MODE: SummaryMode = "auto";
-const REFRESH_MS = 5 * 60_000;
+const REFRESH_MS = 15 * 60_000;
 
 @customElement(CARD_TYPE)
 export class DayBriefCard extends LitElement implements LovelaceCard {
@@ -227,6 +227,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       this._config.summary_mode ?? DEFAULT_MODE,
       this._config.agent_id ?? "",
       this._config.summary_prompt ?? "",
+      this._config.context_notes ?? "",
     ].join("|");
   }
 
@@ -386,12 +387,14 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     const timeZone = this.hass.config.time_zone;
     const digest = buildSummaryDigest({
       weather: this._weather,
+      forecast: this._forecast,
       events: this._events,
       entities: this._entities,
       now: new Date(),
       locale,
       timeZone,
       summaryPrompt: this._config.summary_prompt,
+      contextNotes: this._config.context_notes,
     });
     const cacheKey = this._cacheKey();
 

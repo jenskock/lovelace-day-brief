@@ -12,6 +12,7 @@ export interface DayBriefCardConfig {
   agent_id?: string;
   summary_mode?: SummaryMode;
   summary_prompt?: string;
+  context_notes?: string;
   cache_minutes?: number;
 }
 

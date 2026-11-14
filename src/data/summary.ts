@@ -6,10 +6,20 @@ import type {
   SummaryMode,
 } from "../types";
 import type { EntitySnapshot } from "./entities";
+import type { WeatherForecastEntry } from "../types";
 import {
   formatTemperature,
   type WeatherSnapshot,
 } from "./weather";
+
+const WET_CONDITIONS = new Set([
+  "rainy",
+  "pouring",
+  "snowy",
+  "snowy-rainy",
+  "lightning-rainy",
+  "hail",
+]);
 
 export interface SummaryDigest {
   hash: string;
@@ -252,6 +262,64 @@ function section(
   return [`[${title}]`, lines.length ? lines.join("\n") : empty].join("\n");
 }
 
+function forecastDayLabel(
+  entry: WeatherForecastEntry,
+  locale: string,
+  timeZone: string,
+): string {
+  if (!entry.datetime) {
+    return "?";
+  }
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "short",
+    timeZone,
+  }).format(new Date(entry.datetime));
+}
+
+function buildForecastLines(
+  forecast: WeatherForecastEntry[],
+  weather: WeatherSnapshot | null,
+  locale: string,
+  timeZone: string,
+  german: boolean,
+): string[] {
+  return forecast.slice(0, 6).map((entry) => {
+    const day = forecastDayLabel(entry, locale, timeZone);
+    const condition = weatherLabel(entry.condition ?? "", german);
+    const temp = formatTemperature(
+      entry.temperature,
+      weather?.temperature_unit,
+    );
+    const wet =
+      entry.condition && WET_CONDITIONS.has(entry.condition)
+        ? german
+          ? " · nass"
+          : " · wet"
+        : "";
+    return `- ${day}: ${condition}, ${temp}${wet}`;
+  });
+}
+
+function rainOutlook(
+  forecast: WeatherForecastEntry[],
+  locale: string,
+  timeZone: string,
+  german: boolean,
+): string | null {
+  const wetDays = forecast
+    .slice(0, 6)
+    .filter((entry) => entry.condition && WET_CONDITIONS.has(entry.condition));
+  if (wetDays.length === 0) {
+    return null;
+  }
+  const labels = wetDays
+    .map((entry) => forecastDayLabel(entry, locale, timeZone))
+    .join(", ");
+  return german
+    ? `Regen/Schnee erwartet: ${labels}`
+    : `Rain/snow expected: ${labels}`;
+}
+
 function buildLocalBrief(options: {
   german: boolean;
   dayLabel: string;
@@ -259,6 +327,7 @@ function buildLocalBrief(options: {
   weather: WeatherSnapshot | null;
   weatherLine: string;
   clothing: string | null;
+  rainLine: string | null;
   events: CalendarEvent[];
   people: EntitySnapshot[];
   solar: EntitySnapshot[];
@@ -272,6 +341,7 @@ function buildLocalBrief(options: {
     weather,
     weatherLine,
     clothing,
+    rainLine,
     events,
     people,
     solar,
@@ -289,6 +359,9 @@ function buildLocalBrief(options: {
           ? `Draußen ${weatherLine}. Empfehlung: ${clothing}.`
           : `Draußen ${weatherLine}.`,
       );
+    }
+    if (rainLine) {
+      parts.push(`${rainLine}.`);
     }
     if (events.length === 0) {
       parts.push("Heute stehen keine Termine an.");
@@ -341,6 +414,9 @@ function buildLocalBrief(options: {
           : `Outside: ${weatherLine}.`,
       );
     }
+    if (rainLine) {
+      parts.push(`${rainLine}.`);
+    }
     parts.push(
       events.length === 0
         ? "No meetings scheduled."
@@ -366,21 +442,25 @@ function buildLocalBrief(options: {
 
 export function buildSummaryDigest(options: {
   weather: WeatherSnapshot | null;
+  forecast?: WeatherForecastEntry[];
   events: CalendarEvent[];
   entities: EntitySnapshot[];
   now: Date;
   locale: string;
   timeZone: string;
   summaryPrompt?: string;
+  contextNotes?: string;
 }): SummaryDigest {
   const {
     weather,
+    forecast = weather?.forecast ?? [],
     events,
     entities,
     now,
     locale,
     timeZone,
     summaryPrompt,
+    contextNotes,
   } = options;
 
   const german = isGerman(locale);
@@ -417,6 +497,14 @@ export function buildSummaryDigest(options: {
 
   const clothing = clothingHint(weather, german);
   const buckets = categorizeEntities(entities);
+  const forecastLines = buildForecastLines(
+    forecast,
+    weather,
+    locale,
+    timeZone,
+    german,
+  );
+  const rainLine = rainOutlook(forecast, locale, timeZone, german);
 
   const agendaLines =
     events.length === 0
@@ -424,6 +512,7 @@ export function buildSummaryDigest(options: {
       : events.slice(0, 12).map((event) => eventLine(event, german));
 
   const instructions = summaryPrompt?.trim() || DEFAULT_SUMMARY_PROMPT;
+  const household = contextNotes?.trim();
 
   const dataBlocks = [
     section(
@@ -439,6 +528,15 @@ export function buildSummaryDigest(options: {
       ],
       "",
     ),
+    ...(household
+      ? [
+          section(
+            german ? "HAUSHALT" : "HOUSEHOLD",
+            household.split("\n").map((line) => line.trim()).filter(Boolean),
+            "",
+          ),
+        ]
+      : []),
     section(
       german ? "WETTER" : "WEATHER",
       [
@@ -448,8 +546,14 @@ export function buildSummaryDigest(options: {
             ? `Kleidungshinweis: ${clothing}`
             : `Clothing hint: ${clothing}`
           : "",
+        rainLine ?? "",
       ].filter(Boolean),
       german ? "Keine Wetterdaten." : "No weather data.",
+    ),
+    section(
+      german ? "VORHERSAGE" : "FORECAST",
+      forecastLines,
+      german ? "Keine Vorhersage." : "No forecast.",
     ),
     section(
       german ? "TERMINE" : "AGENDA",
@@ -508,6 +612,7 @@ export function buildSummaryDigest(options: {
     weather,
     weatherLine,
     clothing,
+    rainLine,
     events,
     people: buckets.people,
     solar: buckets.solar,
