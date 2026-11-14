@@ -48,6 +48,16 @@ export const cardStyles = css`
     color: var(--primary-text-color);
   }
 
+  .clock {
+    margin: 6px 0 0;
+    font-size: 2.4rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    color: var(--primary-text-color);
+  }
+
   .refresh-btn {
     flex: 0 0 auto;
     width: 36px;
@@ -229,9 +239,39 @@ export const cardStyles = css`
     color: var(--secondary-text-color);
   }
 
+  .context-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+  }
+
+  .context-toggle .section-title {
+    margin: 0;
+  }
+
+  .context-meta {
+    margin-left: auto;
+    font-size: 0.75rem;
+    color: var(--secondary-text-color);
+  }
+
+  .context-chevron {
+    font-size: 0.75rem;
+    color: var(--secondary-text-color);
+  }
+
   .entity-list {
     list-style: none;
-    margin: 0;
+    margin: 10px 0 0;
     padding: 0;
     display: grid;
     gap: 8px;

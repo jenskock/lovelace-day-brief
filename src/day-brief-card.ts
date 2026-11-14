@@ -50,9 +50,12 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
   @state() private _errors: string[] = [];
   @state() private _loadingEvents = false;
   @state() private _refreshing = false;
+  @state() private _contextOpen = false;
+  @state() private _now = new Date();
 
   private _unsubForecast?: () => void;
   private _refreshTimer?: number;
+  private _clockTimer?: number;
   private _lastWeatherEntity?: string;
   private _lastForecastType?: ForecastType;
   private _fetchGeneration = 0;
@@ -94,12 +97,14 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
   public connectedCallback(): void {
     super.connectedCallback();
     this._startRefreshLoop();
+    this._startClock();
     document.addEventListener("visibilitychange", this._onVisibility);
   }
 
   public disconnectedCallback(): void {
     super.disconnectedCallback();
     this._stopRefreshLoop();
+    this._stopClock();
     this._teardownForecast();
     document.removeEventListener("visibilitychange", this._onVisibility);
   }
@@ -135,7 +140,9 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       changed.has("_summarySource") ||
       changed.has("_errors") ||
       changed.has("_loadingEvents") ||
-      changed.has("_refreshing")
+      changed.has("_refreshing") ||
+      changed.has("_contextOpen") ||
+      changed.has("_now")
     ) {
       return true;
     }
@@ -163,7 +170,11 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
 
   private _onVisibility = (): void => {
     if (document.visibilityState === "visible") {
+      this._now = new Date();
+      this._startClock();
       void this._refreshData(false);
+    } else {
+      this._stopClock();
     }
   };
 
@@ -180,6 +191,32 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       window.clearInterval(this._refreshTimer);
       this._refreshTimer = undefined;
     }
+  }
+
+  private _startClock(): void {
+    this._stopClock();
+    this._now = new Date();
+    this._clockTimer = window.setInterval(() => {
+      this._now = new Date();
+    }, 1000);
+  }
+
+  private _stopClock(): void {
+    if (this._clockTimer) {
+      window.clearInterval(this._clockTimer);
+      this._clockTimer = undefined;
+    }
+  }
+
+  private _clockLabel(): string {
+    const locale = this.hass?.locale?.language ?? "en";
+    const timeZone = this.hass?.config.time_zone;
+    return new Intl.DateTimeFormat(locale, {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      timeZone,
+    }).format(this._now);
   }
 
   private _cacheKey(): string {
@@ -391,7 +428,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       month: "long",
       day: "numeric",
       timeZone,
-    }).format(new Date());
+    }).format(this._now);
   }
 
   private _forecastLabel(entry: WeatherForecastEntry): string {
@@ -430,6 +467,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
             <div>
               <p class="eyebrow">Today</p>
               <h2 class="title">${this._dayTitle()}</h2>
+              <p class="clock" aria-live="polite">${this._clockLabel()}</p>
             </div>
             <button
               class="refresh-btn"
@@ -562,18 +600,38 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
 
           ${this._entities.length
             ? html`
-                <section>
-                  <h3 class="section-title">Context</h3>
-                  <ul class="entity-list">
-                    ${this._entities.map(
-                      (entity) => html`
-                        <li class="entity-row">
-                          <span class="entity-name">${entity.name}</span>
-                          <span class="entity-state">${entity.state}</span>
-                        </li>
-                      `,
-                    )}
-                  </ul>
+                <section class="context">
+                  <button
+                    class="context-toggle"
+                    type="button"
+                    aria-expanded=${this._contextOpen ? "true" : "false"}
+                    @click=${() => {
+                      this._contextOpen = !this._contextOpen;
+                    }}
+                  >
+                    <span class="section-title">Context</span>
+                    <span class="context-meta"
+                      >${this._entities.length}
+                      ${this._entities.length === 1 ? "entity" : "entities"}</span
+                    >
+                    <span class="context-chevron" aria-hidden="true"
+                      >${this._contextOpen ? "▾" : "▸"}</span
+                    >
+                  </button>
+                  ${this._contextOpen
+                    ? html`
+                        <ul class="entity-list">
+                          ${this._entities.map(
+                            (entity) => html`
+                              <li class="entity-row">
+                                <span class="entity-name">${entity.name}</span>
+                                <span class="entity-state">${entity.state}</span>
+                              </li>
+                            `,
+                          )}
+                        </ul>
+                      `
+                    : nothing}
                 </section>
               `
             : nothing}

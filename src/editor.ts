@@ -300,8 +300,8 @@ export class DayBriefCardEditor
             @change=${this._onPrompt}
           ></textarea>
           <span class="hint"
-            >Leave empty for the default. Weather, agenda, and entities are
-            appended automatically.</span
+            >Leer = starkes deutsches Standard-Prompt. Wetter, Termine, Solar,
+            Müll und Entities werden strukturiert angehängt.</span
           >
         </label>
 

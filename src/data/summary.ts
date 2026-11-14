@@ -8,7 +8,6 @@ import type {
 import type { EntitySnapshot } from "./entities";
 import {
   formatTemperature,
-  weatherConditionLabel,
   type WeatherSnapshot,
 } from "./weather";
 
@@ -25,7 +24,27 @@ interface CacheEntry {
   expiresAt: number;
 }
 
+type DayPart = "morgen" | "vormittag" | "nachmittag" | "abend" | "nacht";
+
 const summaryCache = new Map<string, CacheEntry>();
+
+const WEATHER_DE: Record<string, string> = {
+  "clear-night": "klar (Nacht)",
+  cloudy: "bewölkt",
+  fog: "neblig",
+  hail: "Hagel",
+  lightning: "Gewitter",
+  "lightning-rainy": "Gewitterregen",
+  partlycloudy: "teilweise bewölkt",
+  pouring: "stark regnerisch",
+  rainy: "regnerisch",
+  snowy: "schneeig",
+  "snowy-rainy": "Schneeregen",
+  sunny: "sonnig",
+  windy: "windig",
+  "windy-variant": "windig und bewölkt",
+  exceptional: "außergewöhnliches Wetter",
+};
 
 function simpleHash(input: string): string {
   let hash = 0;
@@ -36,14 +55,313 @@ function simpleHash(input: string): string {
   return String(hash);
 }
 
-function eventLine(event: CalendarEvent): string {
-  const when = event.all_day ? "all day" : event.start;
+function isGerman(locale: string): boolean {
+  return locale.toLowerCase().startsWith("de");
+}
+
+function dayPart(now: Date, timeZone: string): DayPart {
+  const hour = Number(
+    new Intl.DateTimeFormat("en-GB", {
+      hour: "numeric",
+      hour12: false,
+      timeZone,
+    }).format(now),
+  );
+  if (hour < 5) return "nacht";
+  if (hour < 10) return "morgen";
+  if (hour < 12) return "vormittag";
+  if (hour < 17) return "nachmittag";
+  if (hour < 22) return "abend";
+  return "nacht";
+}
+
+function dayPartLabel(part: DayPart, german: boolean): string {
+  if (!german) {
+    switch (part) {
+      case "morgen":
+        return "morning";
+      case "vormittag":
+        return "late morning";
+      case "nachmittag":
+        return "afternoon";
+      case "abend":
+        return "evening";
+      case "nacht":
+        return "night";
+      default: {
+        const _exhaustive: never = part;
+        return _exhaustive;
+      }
+    }
+  }
+  switch (part) {
+    case "morgen":
+      return "Morgen";
+    case "vormittag":
+      return "Vormittag";
+    case "nachmittag":
+      return "Nachmittag";
+    case "abend":
+      return "Abend";
+    case "nacht":
+      return "Nacht";
+    default: {
+      const _exhaustive: never = part;
+      return _exhaustive;
+    }
+  }
+}
+
+function weatherLabel(condition: string, german: boolean): string {
+  if (!condition || condition === "unknown" || condition === "unavailable") {
+    return german ? "Wetter unklar" : "Weather unavailable";
+  }
+  if (german) {
+    return WEATHER_DE[condition] ?? condition.replace(/_/g, " ");
+  }
+  return condition.replace(/_/g, " ");
+}
+
+function clothingHint(
+  weather: WeatherSnapshot | null,
+  german: boolean,
+): string | null {
+  if (!weather || typeof weather.temperature !== "number") {
+    return null;
+  }
+  const t = weather.temperature;
+  const wet = ["rainy", "pouring", "snowy-rainy", "lightning-rainy"].includes(
+    weather.condition,
+  );
+  const snow = weather.condition === "snowy";
+
+  if (german) {
+    if (snow) return "Winterkleidung und feste Schuhe";
+    if (t <= 3) return wet ? "dicke Jacke und Regenschutz" : "dicke Jacke";
+    if (t <= 10) return wet ? "warme Jacke und Regenschirm" : "warme Jacke";
+    if (t <= 16) return wet ? "Übergangsjacke und Schirm" : "Übergangsjacke";
+    if (t <= 22) return wet ? "leichte Jacke und Schirm" : "leichte Kleidung";
+    return wet ? "luftige Kleidung und Schirm" : "leichte sommerliche Kleidung";
+  }
+
+  if (snow) return "winter clothes and sturdy shoes";
+  if (t <= 3) return wet ? "heavy coat and rain gear" : "heavy coat";
+  if (t <= 10) return wet ? "warm jacket and umbrella" : "warm jacket";
+  if (t <= 16) return wet ? "light jacket and umbrella" : "light jacket";
+  if (t <= 22) return wet ? "light layer and umbrella" : "light clothes";
+  return wet ? "summer clothes and umbrella" : "summer clothes";
+}
+
+function isUnavailable(state: string): boolean {
+  const value = state.trim().toLowerCase();
+  return (
+    value === "unavailable" ||
+    value === "unknown" ||
+    value === "none" ||
+    value === "nicht verfügbar" ||
+    value === "unbekannt"
+  );
+}
+
+function categorizeEntities(entities: EntitySnapshot[]): {
+  people: EntitySnapshot[];
+  solar: EntitySnapshot[];
+  trash: EntitySnapshot[];
+  sun: EntitySnapshot[];
+  alerts: EntitySnapshot[];
+  other: EntitySnapshot[];
+} {
+  const people: EntitySnapshot[] = [];
+  const solar: EntitySnapshot[] = [];
+  const trash: EntitySnapshot[] = [];
+  const sun: EntitySnapshot[] = [];
+  const alerts: EntitySnapshot[] = [];
+  const other: EntitySnapshot[] = [];
+
+  for (const entity of entities) {
+    if (isUnavailable(entity.state)) {
+      continue;
+    }
+    const id = entity.entity_id.toLowerCase();
+    const name = entity.name.toLowerCase();
+    if (entity.domain === "person" || id.startsWith("person.")) {
+      people.push(entity);
+    } else if (
+      id.includes("abfall") ||
+      id.includes("muell") ||
+      id.includes("mull") ||
+      id.includes("trash") ||
+      name.includes("abfall") ||
+      name.includes("müll") ||
+      name.includes("tonne")
+    ) {
+      trash.push(entity);
+    } else if (
+      id.includes("solar") ||
+      id.includes("solaredge") ||
+      id.includes("autark") ||
+      id.includes("produziert") ||
+      id.includes("exportiert") ||
+      id.includes("verbrauch") ||
+      id.includes("power_production") ||
+      name.includes("solar") ||
+      name.includes("autark") ||
+      name.includes("leistung")
+    ) {
+      solar.push(entity);
+    } else if (
+      id.includes("sun_up") ||
+      id.includes("sun_down") ||
+      name.includes("sonnenaufgang") ||
+      name.includes("sonnenuntergang")
+    ) {
+      sun.push(entity);
+    } else if (
+      id.includes("warn") ||
+      name.includes("warn") ||
+      name.includes("warnung")
+    ) {
+      alerts.push(entity);
+    } else {
+      other.push(entity);
+    }
+  }
+
+  return { people, solar, trash, sun, alerts, other };
+}
+
+function eventLine(event: CalendarEvent, german: boolean): string {
+  const when = event.all_day
+    ? german
+      ? "ganztägig"
+      : "all day"
+    : event.start;
   const cal = event.calendar_name ? ` (${event.calendar_name})` : "";
-  return `- ${when}: ${event.summary ?? "Busy"}${cal}`;
+  return `- ${when}: ${event.summary ?? (german ? "Belegt" : "Busy")}${cal}`;
 }
 
 function entityLine(entity: EntitySnapshot): string {
-  return `- ${entity.name} (${entity.entity_id}): ${entity.state}`;
+  return `- ${entity.name}: ${entity.state}`;
+}
+
+function section(
+  title: string,
+  lines: string[],
+  empty: string,
+): string {
+  return [`[${title}]`, lines.length ? lines.join("\n") : empty].join("\n");
+}
+
+function buildLocalBrief(options: {
+  german: boolean;
+  dayLabel: string;
+  partLabel: string;
+  weather: WeatherSnapshot | null;
+  weatherLine: string;
+  clothing: string | null;
+  events: CalendarEvent[];
+  people: EntitySnapshot[];
+  solar: EntitySnapshot[];
+  trash: EntitySnapshot[];
+  alerts: EntitySnapshot[];
+}): string {
+  const {
+    german,
+    dayLabel,
+    partLabel,
+    weather,
+    weatherLine,
+    clothing,
+    events,
+    people,
+    solar,
+    trash,
+    alerts,
+  } = options;
+
+  const parts: string[] = [];
+
+  if (german) {
+    parts.push(`Guten ${partLabel} — ${dayLabel}.`);
+    if (weather) {
+      parts.push(
+        clothing
+          ? `Draußen ${weatherLine}. Empfehlung: ${clothing}.`
+          : `Draußen ${weatherLine}.`,
+      );
+    }
+    if (events.length === 0) {
+      parts.push("Heute stehen keine Termine an.");
+    } else {
+      const names = events
+        .slice(0, 3)
+        .map((event) => event.summary)
+        .filter(Boolean)
+        .join(", ");
+      parts.push(
+        events.length === 1
+          ? `Termin: ${names}.`
+          : `${events.length} Termine, u.a. ${names}.`,
+      );
+    }
+    if (solar.length) {
+      parts.push(
+        `Solar: ${solar
+          .slice(0, 3)
+          .map((e) => `${e.name} ${e.state}`)
+          .join(", ")}.`,
+      );
+    }
+    if (trash.length) {
+      parts.push(
+        `Müll: ${trash.map((e) => `${e.name} ${e.state}`).join(", ")}.`,
+      );
+    }
+    if (alerts.length) {
+      const active = alerts.filter((e) => e.state !== "0" && e.state !== "ok");
+      if (active.length) {
+        parts.push(
+          `Hinweis: ${active.map((e) => `${e.name} ${e.state}`).join(", ")}.`,
+        );
+      }
+    }
+    if (people.length) {
+      parts.push(
+        `Zuhause/Status: ${people
+          .map((e) => `${e.name} ${e.state}`)
+          .join(", ")}.`,
+      );
+    }
+  } else {
+    parts.push(`Good ${partLabel} — ${dayLabel}.`);
+    if (weather) {
+      parts.push(
+        clothing
+          ? `Outside: ${weatherLine}. Wear: ${clothing}.`
+          : `Outside: ${weatherLine}.`,
+      );
+    }
+    parts.push(
+      events.length === 0
+        ? "No meetings scheduled."
+        : `${events.length} event(s), starting with ${events[0]?.summary ?? "Busy"}.`,
+    );
+    if (solar.length) {
+      parts.push(
+        `Solar: ${solar
+          .slice(0, 3)
+          .map((e) => `${e.name} ${e.state}`)
+          .join(", ")}.`,
+      );
+    }
+    if (trash.length) {
+      parts.push(
+        `Trash: ${trash.map((e) => `${e.name} ${e.state}`).join(", ")}.`,
+      );
+    }
+  }
+
+  return parts.join(" ");
 }
 
 export function buildSummaryDigest(options: {
@@ -65,6 +383,10 @@ export function buildSummaryDigest(options: {
     summaryPrompt,
   } = options;
 
+  const german = isGerman(locale);
+  const part = dayPart(now, timeZone);
+  const partLabel = dayPartLabel(part, german);
+
   const dayLabel = new Intl.DateTimeFormat(locale, {
     weekday: "long",
     month: "long",
@@ -72,66 +394,131 @@ export function buildSummaryDigest(options: {
     timeZone,
   }).format(now);
 
+  const timeLabel = new Intl.DateTimeFormat(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone,
+  }).format(now);
+
   const weatherLine = weather
-    ? `${weatherConditionLabel(weather.condition)}, ${formatTemperature(
+    ? `${weatherLabel(weather.condition, german)}, ${formatTemperature(
         weather.temperature,
         weather.temperature_unit,
       )}${
         typeof weather.humidity === "number"
-          ? `, humidity ${weather.humidity}%`
+          ? german
+            ? `, Luftfeuchtigkeit ${weather.humidity}%`
+            : `, humidity ${weather.humidity}%`
           : ""
       }`
-    : "Weather unavailable";
+    : german
+      ? "Wetter nicht verfügbar"
+      : "Weather unavailable";
 
-  const agenda =
+  const clothing = clothingHint(weather, german);
+  const buckets = categorizeEntities(entities);
+
+  const agendaLines =
     events.length === 0
-      ? "No meetings scheduled."
-      : events.slice(0, 12).map(eventLine).join("\n");
+      ? []
+      : events.slice(0, 12).map((event) => eventLine(event, german));
 
-  const context =
-    entities.length === 0
-      ? "No extra entities configured."
-      : entities.map(entityLine).join("\n");
+  const instructions = summaryPrompt?.trim() || DEFAULT_SUMMARY_PROMPT;
 
-  const localParts = [
-    `Today is ${dayLabel}.`,
-    `Weather: ${weatherLine}.`,
-    events.length === 0
-      ? "Your calendars look clear."
-      : `You have ${events.length} event${events.length === 1 ? "" : "s"} ahead${
-          events[0]?.summary ? `, starting with ${events[0].summary}` : ""
-        }.`,
+  const dataBlocks = [
+    section(
+      german ? "ZEIT" : "TIME",
+      [
+        german
+          ? `Datum: ${dayLabel}`
+          : `Date: ${dayLabel}`,
+        german ? `Uhrzeit: ${timeLabel}` : `Time: ${timeLabel}`,
+        german
+          ? `Tageszeit: ${partLabel}`
+          : `Time of day: ${partLabel}`,
+      ],
+      "",
+    ),
+    section(
+      german ? "WETTER" : "WEATHER",
+      [
+        weatherLine,
+        clothing
+          ? german
+            ? `Kleidungshinweis: ${clothing}`
+            : `Clothing hint: ${clothing}`
+          : "",
+      ].filter(Boolean),
+      german ? "Keine Wetterdaten." : "No weather data.",
+    ),
+    section(
+      german ? "TERMINE" : "AGENDA",
+      agendaLines,
+      german ? "Keine Termine." : "No meetings.",
+    ),
+    section(
+      german ? "PERSONEN" : "PEOPLE",
+      buckets.people.map(entityLine),
+      german ? "Keine Personendaten." : "No people data.",
+    ),
+    section(
+      "SOLAR",
+      buckets.solar.map(entityLine),
+      german ? "Keine Solarwerte (oder nicht verfügbar)." : "No solar data.",
+    ),
+    section(
+      german ? "MUELL" : "TRASH",
+      buckets.trash.map(entityLine),
+      german ? "Keine Mülldaten." : "No trash data.",
+    ),
+    section(
+      german ? "SONNE" : "SUN",
+      buckets.sun.map(entityLine),
+      german ? "Keine Sonnenzeiten." : "No sun times.",
+    ),
+    section(
+      german ? "WARNUNGEN" : "ALERTS",
+      buckets.alerts.map(entityLine),
+      german ? "Keine Warnungen." : "No alerts.",
+    ),
+    section(
+      german ? "SONSTIGES" : "OTHER",
+      buckets.other.map(entityLine),
+      german ? "Nichts weiteres." : "Nothing else.",
+    ),
   ];
-
-  if (entities.length > 0) {
-    localParts.push(
-      `Context: ${entities
-        .slice(0, 6)
-        .map((entity) => `${entity.name} is ${entity.state}`)
-        .join("; ")}.`,
-    );
-  }
-
-  const instructions =
-    summaryPrompt?.trim() || DEFAULT_SUMMARY_PROMPT;
 
   const prompt = [
     instructions,
     "",
-    `Date: ${dayLabel}`,
-    `Weather: ${weatherLine}`,
-    "Agenda:",
-    agenda,
-    "Extra entities:",
-    context,
+    german
+      ? "DATEN (nur diese Fakten verwenden; fehlende/ungültige Werte weglassen):"
+      : "DATA (use only these facts; skip missing/invalid values):",
+    dataBlocks.join("\n\n"),
+    "",
+    german
+      ? "ANTWORT: Nur der fertige deutsche Fließtext, nichts sonst."
+      : "RESPONSE: Only the finished brief text, nothing else.",
   ].join("\n");
 
+  const local = buildLocalBrief({
+    german,
+    dayLabel,
+    partLabel,
+    weather,
+    weatherLine,
+    clothing,
+    events,
+    people: buckets.people,
+    solar: buckets.solar,
+    trash: buckets.trash,
+    alerts: buckets.alerts,
+  });
+
   return {
-    hash: simpleHash(
-      `${instructions}|${dayLabel}|${weatherLine}|${agenda}|${context}`,
-    ),
+    hash: simpleHash(prompt),
     prompt,
-    local: localParts.join(" "),
+    local,
   };
 }
 
