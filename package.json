@@ -1,0 +1,31 @@
+{
+  "name": "lovelace-day-brief",
+  "version": "1.0.0",
+  "description": "Home Assistant Lovelace card: AI-first day brief with weather and calendar",
+  "type": "module",
+  "main": "dist/day-brief.js",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "home-assistant",
+    "lovelace",
+    "hacs",
+    "custom-cards"
+  ],
+  "author": "jenskock",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jenskock/lovelace-day-brief.git"
+  },
+  "dependencies": {
+    "lit": "^3.2.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3"
+  }
+}
