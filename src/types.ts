@@ -85,6 +85,12 @@ export interface HomeAssistant {
     returnResponse?: boolean,
   ) => Promise<{ response?: Record<string, unknown> } | void>;
   callWS: <T>(message: Record<string, unknown>) => Promise<T>;
+  callApi?: <T>(
+    method: "GET" | "POST" | "PUT" | "DELETE",
+    path: string,
+    data?: Record<string, unknown>,
+  ) => Promise<T>;
+  hassUrl?: (path?: string) => string;
   formatEntityState?: (stateObj: HassEntity, state?: string) => string;
 }
 

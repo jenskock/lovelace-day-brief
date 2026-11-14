@@ -1,66 +1,26 @@
 import type { HomeAssistant } from "../types";
 
-interface TtsGenerateResult {
+interface TtsGetUrlResult {
   url?: string;
   path?: string;
 }
 
-/** Tiny silent WAV — unlocks Safari/WebKit audio during the tap gesture. */
-const SILENT_WAV =
-  "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=";
-
 let activeAudio: HTMLAudioElement | null = null;
-let unlockedAudio: HTMLAudioElement | null = null;
-
-function resolveAudioUrl(
-  hass: HomeAssistant,
-  result: TtsGenerateResult,
-): string | null {
-  // Prefer path: result.url is often an internal HA URL (e.g. 127.0.0.1 /
-  // LAN IP) that the tablet cannot reach through the public hostname.
-  const raw = result.path || result.url;
-  if (!raw) {
-    return null;
-  }
-  if (raw.startsWith("http://") || raw.startsWith("https://")) {
-    try {
-      const parsed = new URL(raw);
-      if (parsed.pathname.startsWith("/api/tts_proxy/")) {
-        return parsed.pathname + parsed.search;
-      }
-    } catch {
-      // fall through
-    }
-    return raw;
-  }
-  const path = raw.startsWith("/") ? raw : `/${raw}`;
-  if (
-    typeof (hass as HomeAssistant & { hassUrl?: (p: string) => string })
-      .hassUrl === "function"
-  ) {
-    return (hass as HomeAssistant & { hassUrl: (p: string) => string }).hassUrl(
-      path,
-    );
-  }
-  return path;
-}
+let gestureAudio: HTMLAudioElement | null = null;
 
 /**
- * Must run synchronously in the click handler — before any await —
- * or iPad Safari will block audio.play() after TTS generation.
+ * Must run in the click handler before any await (HA frontend pattern).
+ * Creates an Audio element and starts play() while the user gesture is live.
  */
 export function unlockAudioForGesture(): void {
   if (typeof window === "undefined") {
     return;
   }
   try {
-    // Keep this element "playing" until speakSummary swaps in the real
-    // TTS URL — pausing here can drop the Safari user-gesture grant.
-    const audio = unlockedAudio ?? new Audio(SILENT_WAV);
-    unlockedAudio = audio;
-    audio.currentTime = 0;
+    const audio = new Audio();
+    gestureAudio = audio;
     void audio.play().catch(() => {
-      /* ignore unlock failures; real play will report */
+      /* empty play may reject until src is set; element stays gesture-bound */
     });
   } catch {
     /* ignore */
@@ -77,33 +37,7 @@ export function stopSpeaking(): void {
     activeAudio.load();
     activeAudio = null;
   }
-}
-
-async function playUrl(url: string): Promise<void> {
-  stopSpeaking();
-  const audio = unlockedAudio ?? new Audio();
-  unlockedAudio = null;
-  activeAudio = audio;
-  audio.src = url;
-
-  try {
-    await audio.play();
-  } catch (error) {
-    activeAudio = null;
-    const message =
-      error instanceof Error ? error.message : "audio playback blocked";
-    throw new Error(`playback failed: ${message}`);
-  }
-
-  await new Promise<void>((resolve, reject) => {
-    audio.onended = () => resolve();
-    audio.onerror = () =>
-      reject(new Error("audio element failed to load TTS stream"));
-  });
-
-  if (activeAudio === audio) {
-    activeAudio = null;
-  }
+  gestureAudio = null;
 }
 
 function formatTtsError(error: unknown): string {
@@ -118,12 +52,16 @@ function formatTtsError(error: unknown): string {
       message?: unknown;
       code?: unknown;
       error?: unknown;
+      body?: unknown;
     };
     if (typeof record.message === "string" && record.message.trim()) {
       return record.code ? `${record.code}: ${record.message}` : record.message;
     }
     if (typeof record.error === "string" && record.error.trim()) {
       return record.error;
+    }
+    if (typeof record.body === "string" && record.body.trim()) {
+      return record.body;
     }
     try {
       return JSON.stringify(error);
@@ -134,10 +72,46 @@ function formatTtsError(error: unknown): string {
   return "unknown TTS error";
 }
 
+async function playPath(path: string): Promise<void> {
+  const audio = gestureAudio ?? new Audio();
+  gestureAudio = null;
+  activeAudio = audio;
+
+  await new Promise<void>((resolve, reject) => {
+    const onPlaying = () => {
+      cleanup();
+      resolve();
+    };
+    const onError = () => {
+      cleanup();
+      reject(new Error("audio element failed to load TTS stream"));
+    };
+    const cleanup = () => {
+      audio.removeEventListener("playing", onPlaying);
+      audio.removeEventListener("error", onError);
+    };
+    audio.addEventListener("playing", onPlaying);
+    audio.addEventListener("error", onError);
+    audio.src = path;
+    void audio.play().catch(() => {
+      /* canplaythrough / playing handlers drive success; play() may race */
+    });
+  });
+
+  await new Promise<void>((resolve, reject) => {
+    audio.onended = () => resolve();
+    audio.onerror = () =>
+      reject(new Error("audio element failed during TTS playback"));
+  });
+
+  if (activeAudio === audio) {
+    activeAudio = null;
+  }
+}
+
 /**
  * Prefer Home Assistant TTS engine (e.g. Requesty via OpenAI TTS HACS).
- * Optionally also announce on a media_player.
- * Falls back to browser speechSynthesis.
+ * Uses the same API as the HA frontend: POST /api/tts_get_url.
  *
  * Call `unlockAudioForGesture()` from the click handler before awaiting this.
  */
@@ -159,18 +133,40 @@ export async function speakSummary(options: {
 
   if (options.ttsEntity) {
     try {
-      const result = await options.hass.callWS<TtsGenerateResult>({
-        type: "tts/generate",
-        engine_id: options.ttsEntity,
-        language,
-        message: text,
-        options: {},
-      });
-      const url = resolveAudioUrl(options.hass, result);
-      if (!url) {
-        throw new Error("TTS engine returned no audio URL");
+      if (typeof options.hass.callApi !== "function") {
+        throw new Error("hass.callApi is unavailable");
       }
-      await playUrl(url);
+      // Official HA frontend API (see frontend/src/data/tts.ts).
+      const result = await options.hass.callApi<TtsGetUrlResult>(
+        "POST",
+        "tts_get_url",
+        {
+          engine_id: options.ttsEntity,
+          message: text,
+          language,
+          cache: true,
+        },
+      );
+      const path = result.path || result.url;
+      if (!path) {
+        throw new Error("tts_get_url returned no path");
+      }
+      // Prefer relative /api/tts_proxy/... so the tablet stays on the
+      // same origin (home.jenskock.de), not an internal LAN URL.
+      const playable =
+        path.startsWith("http://") || path.startsWith("https://")
+          ? (() => {
+              try {
+                const parsed = new URL(path);
+                return parsed.pathname.startsWith("/api/tts_proxy/")
+                  ? parsed.pathname + parsed.search
+                  : path;
+              } catch {
+                return path;
+              }
+            })()
+          : path;
+      await playPath(playable);
     } catch (error) {
       throw new Error(formatTtsError(error));
     }
