@@ -1,6 +1,6 @@
 {
   "name": "lovelace-day-brief",
-  "version": "1.6.4",
+  "version": "1.6.5",
   "description": "Home Assistant Lovelace card: AI-first day brief with weather and calendar",
   "type": "module",
   "main": "dist/day-brief.js",

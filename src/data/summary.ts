@@ -404,6 +404,83 @@ function entityLine(entity: EntitySnapshot): string {
   return `- ${entity.name}: ${entity.state}`;
 }
 
+/** Best-effort days-until from waste sensors (number, ISO date, or German phrases). */
+function trashDaysUntil(state: string, now: Date, timeZone: string): number | null {
+  const raw = state.trim().toLowerCase();
+  if (!raw || isUnavailable(raw)) {
+    return null;
+  }
+  if (/^(heute|today|0)$/.test(raw)) {
+    return 0;
+  }
+  if (/^(morgen|tomorrow)$/.test(raw) || /\bin 1 day\b/.test(raw)) {
+    return 1;
+  }
+  const dayMatch = raw.match(/\b(?:in\s+)?(\d+)\s*(?:tag|tage|days?)\b/);
+  if (dayMatch) {
+    return Number(dayMatch[1]);
+  }
+  if (/^\d+(\.\d+)?$/.test(raw)) {
+    return Math.round(Number(raw));
+  }
+  const parsed = Date.parse(state.trim());
+  if (!Number.isNaN(parsed)) {
+    const target = new Date(parsed);
+    const todayKey = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(now);
+    const targetKey = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(target);
+    const todayUtc = Date.parse(`${todayKey}T00:00:00Z`);
+    const targetUtc = Date.parse(`${targetKey}T00:00:00Z`);
+    return Math.round((targetUtc - todayUtc) / 86_400_000);
+  }
+  return null;
+}
+
+function trashActionLines(
+  trash: EntitySnapshot[],
+  now: Date,
+  timeZone: string,
+  german: boolean,
+): string[] {
+  const lines: string[] = [];
+  for (const entity of trash) {
+    const days = trashDaysUntil(entity.state, now, timeZone);
+    if (days === null) {
+      continue;
+    }
+    if (days === 0) {
+      lines.push(
+        german
+          ? `AKTION HEUTE: ${entity.name} — Abholung heute → Tonne muss draußen sein.`
+          : `ACTION TODAY: ${entity.name} — pickup today → bin must be out.`,
+      );
+    } else if (days === 1) {
+      lines.push(
+        german
+          ? `AKTION HEUTE ABEND: ${entity.name} — Abholung morgen → HEUTE RAUSSTELLEN.`
+          : `ACTION TONIGHT: ${entity.name} — pickup tomorrow → PUT OUT TODAY.`,
+      );
+    }
+  }
+  if (!lines.length && trash.length) {
+    lines.push(
+      german
+        ? "Keine Abholung heute/morgen erkannt — Müll im Brief weglassen."
+        : "No pickup today/tomorrow detected — omit trash from the brief.",
+    );
+  }
+  return lines;
+}
+
 function section(
   title: string,
   lines: string[],
@@ -474,6 +551,8 @@ function buildLocalBrief(options: {
   german: boolean;
   dayLabel: string;
   part: DayPart;
+  now: Date;
+  timeZone: string;
   weather: WeatherSnapshot | null;
   weatherLine: string;
   clothing: string | null;
@@ -493,6 +572,8 @@ function buildLocalBrief(options: {
     german,
     dayLabel,
     part,
+    now,
+    timeZone,
     weather,
     weatherLine,
     clothing,
@@ -556,10 +637,16 @@ function buildLocalBrief(options: {
           .join(", ")}.`,
       );
     }
-    if (trash.length) {
-      parts.push(
-        `Müll: ${trash.map((e) => `${e.name} ${e.state}`).join(", ")}.`,
-      );
+    {
+      const actions = trashActionLines(trash, now, timeZone, true);
+      const urgent = actions.filter((line) => line.startsWith("AKTION"));
+      if (urgent.length) {
+        parts.push(
+          urgent
+            .map((line) => line.replace(/^AKTION (HEUTE(?: ABEND)?: )/, ""))
+            .join(" "),
+        );
+      }
     }
     if (windows.length) {
       parts.push(
@@ -629,10 +716,18 @@ function buildLocalBrief(options: {
           .join(", ")}.`,
       );
     }
-    if (trash.length) {
-      parts.push(
-        `Trash: ${trash.map((e) => `${e.name} ${e.state}`).join(", ")}.`,
-      );
+    {
+      const actions = trashActionLines(trash, now, timeZone, false);
+      const urgent = actions.filter((line) => line.startsWith("ACTION"));
+      if (urgent.length) {
+        parts.push(
+          urgent
+            .map((line) =>
+              line.replace(/^ACTION (TODAY|TONIGHT): /, ""),
+            )
+            .join(" "),
+        );
+      }
     }
     if (windows.length) {
       parts.push(`Open windows: ${windows.map((e) => e.name).join(", ")}.`);
@@ -830,6 +925,13 @@ export function buildSummaryDigest(options: {
       german ? "Keine Mülldaten." : "No trash data.",
     ),
     section(
+      german ? "MUELL-AKTION" : "TRASH-ACTION",
+      trashActionLines(buckets.trash, now, timeZone, german),
+      german
+        ? "Keine Müll-Aktion heute/morgen."
+        : "No trash action today/tomorrow.",
+    ),
+    section(
       german ? "SONNE" : "SUN",
       buckets.sun.map(entityLine),
       german ? "Keine Sonnenzeiten." : "No sun times.",
@@ -872,14 +974,16 @@ export function buildSummaryDigest(options: {
     dataBlocks.join("\n\n"),
     "",
     german
-      ? "ANTWORT: Nur der fertige deutsche Fließtext, nichts sonst."
-      : "RESPONSE: Only the finished brief text, nothing else.",
+      ? "ANTWORT: Nur der fertige deutsche Fließtext (Markdown **fett** erlaubt), nichts sonst."
+      : "RESPONSE: Only the finished brief text (Markdown **bold** allowed), nothing else.",
   ].join("\n");
 
   const local = buildLocalBrief({
     german,
     dayLabel,
     part,
+    now,
+    timeZone,
     weather,
     weatherLine,
     clothing,

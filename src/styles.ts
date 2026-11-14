@@ -108,6 +108,11 @@ export const cardStyles = css`
     color: var(--primary-text-color);
   }
 
+  .brief strong {
+    font-weight: 700;
+    color: var(--primary-text-color);
+  }
+
   .split {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -127,13 +132,12 @@ export const cardStyles = css`
     border-radius: 18px;
     background: color-mix(
       in srgb,
-      var(--primary-text-color) 3.5%,
+      var(--primary-text-color) 1.5%,
       var(--ha-card-background, var(--card-background-color, #fff))
     );
     border: 1px solid
-      color-mix(in srgb, var(--primary-text-color) 10%, transparent);
-    box-shadow: inset 0 1px 0
-      color-mix(in srgb, var(--primary-text-color) 3%, transparent);
+      color-mix(in srgb, var(--primary-text-color) 5%, transparent);
+    box-shadow: none;
   }
 
   .section-title {
@@ -200,7 +204,7 @@ export const cardStyles = css`
       var(--primary-text-color) 25%,
       var(--secondary-text-color)
     );
-    background: color-mix(in srgb, var(--primary-text-color) 8%, transparent);
+    background: color-mix(in srgb, var(--primary-text-color) 4%, transparent);
   }
 
   .forecast {
@@ -215,9 +219,9 @@ export const cardStyles = css`
     padding: 8px 6px;
     border-radius: 12px;
     text-align: center;
-    background: color-mix(in srgb, var(--primary-text-color) 7%, transparent);
+    background: color-mix(in srgb, var(--primary-text-color) 3.5%, transparent);
     border: 1px solid
-      color-mix(in srgb, var(--primary-text-color) 5%, transparent);
+      color-mix(in srgb, var(--primary-text-color) 3%, transparent);
   }
 
   .forecast-day,
@@ -258,7 +262,7 @@ export const cardStyles = css`
     align-items: start;
     padding: 10px 0;
     border-top: 1px solid
-      color-mix(in srgb, var(--primary-text-color) 8%, transparent);
+      color-mix(in srgb, var(--primary-text-color) 4%, transparent);
   }
 
   .event:first-child {
@@ -438,7 +442,7 @@ export const cardStyles = css`
     gap: 6px;
     margin: 0;
     padding: 4px 10px;
-    border: 1px solid color-mix(in srgb, var(--primary-text-color) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--primary-text-color) 6%, transparent);
     border-radius: 999px;
     background: transparent;
     color: var(--secondary-text-color);

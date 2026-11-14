@@ -8,6 +8,10 @@ import {
 } from "./data/entities";
 import { KeepAwakeController } from "./data/keep-awake";
 import {
+  renderBriefMarkdown,
+  stripBriefMarkdown,
+} from "./data/brief-format";
+import {
   buildSummaryDigest,
   invalidateSummaryCache,
   resolveSummary,
@@ -395,7 +399,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     try {
       await speakSummary({
         hass: this.hass,
-        text: this._summary,
+        text: stripBriefMarkdown(this._summary),
         // Engine locale catalog; spoken language comes from the text.
         language: "en",
         ttsEntity: this._config.tts_entity,
@@ -599,15 +603,15 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
           </div>
         </div>
 
-        <p
+        <div
           class="brief ${this._summarySource === "loading" || this._refreshing
             ? "loading"
             : ""}"
         >
           ${this._summarySource === "loading" && !this._summary
             ? "Preparing your day brief…"
-            : this._summary}
-        </p>
+            : renderBriefMarkdown(this._summary)}
+        </div>
 
         <div class="split">
           <section class="panel">
