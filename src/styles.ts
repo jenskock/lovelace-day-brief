@@ -127,13 +127,13 @@ export const cardStyles = css`
     border-radius: 18px;
     background: color-mix(
       in srgb,
-      var(--primary-text-color) 7%,
+      var(--primary-text-color) 3.5%,
       var(--ha-card-background, var(--card-background-color, #fff))
     );
     border: 1px solid
-      color-mix(in srgb, var(--primary-text-color) 18%, transparent);
+      color-mix(in srgb, var(--primary-text-color) 10%, transparent);
     box-shadow: inset 0 1px 0
-      color-mix(in srgb, var(--primary-text-color) 6%, transparent);
+      color-mix(in srgb, var(--primary-text-color) 3%, transparent);
   }
 
   .section-title {
@@ -144,7 +144,7 @@ export const cardStyles = css`
     text-transform: uppercase;
     color: color-mix(
       in srgb,
-      var(--primary-text-color) 55%,
+      var(--primary-text-color) 25%,
       var(--secondary-text-color)
     );
   }
@@ -170,7 +170,7 @@ export const cardStyles = css`
     font-size: 0.9rem;
     color: color-mix(
       in srgb,
-      var(--primary-text-color) 45%,
+      var(--primary-text-color) 20%,
       var(--secondary-text-color)
     );
   }
@@ -197,10 +197,10 @@ export const cardStyles = css`
     font-size: 0.82rem;
     color: color-mix(
       in srgb,
-      var(--primary-text-color) 50%,
+      var(--primary-text-color) 25%,
       var(--secondary-text-color)
     );
-    background: color-mix(in srgb, var(--primary-text-color) 10%, transparent);
+    background: color-mix(in srgb, var(--primary-text-color) 8%, transparent);
   }
 
   .forecast {
@@ -215,9 +215,9 @@ export const cardStyles = css`
     padding: 8px 6px;
     border-radius: 12px;
     text-align: center;
-    background: color-mix(in srgb, var(--primary-text-color) 9%, transparent);
+    background: color-mix(in srgb, var(--primary-text-color) 7%, transparent);
     border: 1px solid
-      color-mix(in srgb, var(--primary-text-color) 10%, transparent);
+      color-mix(in srgb, var(--primary-text-color) 5%, transparent);
   }
 
   .forecast-day,
@@ -226,7 +226,7 @@ export const cardStyles = css`
     font-size: 0.75rem;
     color: color-mix(
       in srgb,
-      var(--primary-text-color) 40%,
+      var(--primary-text-color) 20%,
       var(--secondary-text-color)
     );
     text-transform: capitalize;
@@ -258,7 +258,7 @@ export const cardStyles = css`
     align-items: start;
     padding: 10px 0;
     border-top: 1px solid
-      color-mix(in srgb, var(--primary-text-color) 14%, transparent);
+      color-mix(in srgb, var(--primary-text-color) 8%, transparent);
   }
 
   .event:first-child {
@@ -268,11 +268,10 @@ export const cardStyles = css`
 
   .event-time {
     font-size: 1rem;
-    font-weight: 550;
     font-variant-numeric: tabular-nums;
     color: color-mix(
       in srgb,
-      var(--primary-text-color) 55%,
+      var(--primary-text-color) 25%,
       var(--secondary-text-color)
     );
   }
@@ -284,7 +283,7 @@ export const cardStyles = css`
   .event-title {
     margin: 0;
     font-size: 1.15rem;
-    font-weight: 600;
+    font-weight: 550;
     color: var(--primary-text-color);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -296,7 +295,7 @@ export const cardStyles = css`
     font-size: 0.9rem;
     color: color-mix(
       in srgb,
-      var(--primary-text-color) 40%,
+      var(--primary-text-color) 20%,
       var(--secondary-text-color)
     );
   }
