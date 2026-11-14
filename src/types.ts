@@ -6,10 +6,12 @@ export interface DayBriefCardConfig {
   title?: string;
   weather_entity?: string;
   calendars?: string[];
+  entities?: string[];
   forecast_type?: ForecastType;
   horizon_hours?: number;
   agent_id?: string;
   summary_mode?: SummaryMode;
+  summary_prompt?: string;
   cache_minutes?: number;
 }
 

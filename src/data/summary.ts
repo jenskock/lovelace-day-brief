@@ -1,9 +1,11 @@
+import { DEFAULT_SUMMARY_PROMPT } from "../const";
 import type {
   CalendarEvent,
   ConversationProcessResult,
   HomeAssistant,
   SummaryMode,
 } from "../types";
+import type { EntitySnapshot } from "./entities";
 import {
   formatTemperature,
   weatherConditionLabel,
@@ -40,13 +42,29 @@ function eventLine(event: CalendarEvent): string {
   return `- ${when}: ${event.summary ?? "Busy"}${cal}`;
 }
 
-export function buildSummaryDigest(
-  weather: WeatherSnapshot | null,
-  events: CalendarEvent[],
-  now: Date,
-  locale: string,
-  timeZone: string,
-): SummaryDigest {
+function entityLine(entity: EntitySnapshot): string {
+  return `- ${entity.name} (${entity.entity_id}): ${entity.state}`;
+}
+
+export function buildSummaryDigest(options: {
+  weather: WeatherSnapshot | null;
+  events: CalendarEvent[];
+  entities: EntitySnapshot[];
+  now: Date;
+  locale: string;
+  timeZone: string;
+  summaryPrompt?: string;
+}): SummaryDigest {
+  const {
+    weather,
+    events,
+    entities,
+    now,
+    locale,
+    timeZone,
+    summaryPrompt,
+  } = options;
+
   const dayLabel = new Intl.DateTimeFormat(locale, {
     weekday: "long",
     month: "long",
@@ -70,6 +88,11 @@ export function buildSummaryDigest(
       ? "No meetings scheduled."
       : events.slice(0, 12).map(eventLine).join("\n");
 
+  const context =
+    entities.length === 0
+      ? "No extra entities configured."
+      : entities.map(entityLine).join("\n");
+
   const localParts = [
     `Today is ${dayLabel}.`,
     `Weather: ${weatherLine}.`,
@@ -80,20 +103,44 @@ export function buildSummaryDigest(
         }.`,
   ];
 
+  if (entities.length > 0) {
+    localParts.push(
+      `Context: ${entities
+        .slice(0, 6)
+        .map((entity) => `${entity.name} is ${entity.state}`)
+        .join("; ")}.`,
+    );
+  }
+
+  const instructions =
+    summaryPrompt?.trim() || DEFAULT_SUMMARY_PROMPT;
+
   const prompt = [
-    "Summarize only. Do not control devices, call tools, or ask follow-up questions.",
-    "Write 1-3 short sentences for a home dashboard day brief.",
+    instructions,
+    "",
     `Date: ${dayLabel}`,
     `Weather: ${weatherLine}`,
     "Agenda:",
     agenda,
+    "Extra entities:",
+    context,
   ].join("\n");
 
   return {
-    hash: simpleHash(`${dayLabel}|${weatherLine}|${agenda}`),
+    hash: simpleHash(
+      `${instructions}|${dayLabel}|${weatherLine}|${agenda}|${context}`,
+    ),
     prompt,
     local: localParts.join(" "),
   };
+}
+
+export function invalidateSummaryCache(cacheKey?: string): void {
+  if (!cacheKey) {
+    summaryCache.clear();
+    return;
+  }
+  summaryCache.delete(cacheKey);
 }
 
 export function getCachedSummary(
@@ -153,11 +200,18 @@ export async function resolveSummary(options: {
   digest: SummaryDigest;
   cacheKey: string;
   cacheMinutes: number;
+  force?: boolean;
 }): Promise<{ text: string; source: "ai" | "local" }> {
-  const { hass, mode, agentId, digest, cacheKey, cacheMinutes } = options;
-  const cached = getCachedSummary(cacheKey, digest.hash);
-  if (cached) {
-    return { text: cached.text, source: cached.source };
+  const { hass, mode, agentId, digest, cacheKey, cacheMinutes, force } =
+    options;
+
+  if (force) {
+    invalidateSummaryCache(cacheKey);
+  } else {
+    const cached = getCachedSummary(cacheKey, digest.hash);
+    if (cached) {
+      return { text: cached.text, source: cached.source };
+    }
   }
 
   if (mode === "local") {
@@ -173,11 +227,6 @@ export async function resolveSummary(options: {
     }
   } catch {
     // Fall through to local summary.
-  }
-
-  if (mode === "ai") {
-    setCachedSummary(cacheKey, digest.hash, digest.local, "local", cacheMinutes);
-    return { text: digest.local, source: "local" };
   }
 
   setCachedSummary(cacheKey, digest.hash, digest.local, "local", cacheMinutes);

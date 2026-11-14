@@ -1,6 +1,6 @@
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { EDITOR_NAME } from "./const";
+import { DEFAULT_SUMMARY_PROMPT, EDITOR_NAME } from "./const";
 import type {
   DayBriefCardConfig,
   ForecastType,
@@ -30,6 +30,17 @@ function fireConfigChanged(
   );
 }
 
+function parseEntityList(raw: string): string[] {
+  return [
+    ...new Set(
+      raw
+        .split(/[\n,]/)
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  ];
+}
+
 @customElement(EDITOR_NAME)
 export class DayBriefCardEditor
   extends LitElement
@@ -40,7 +51,11 @@ export class DayBriefCardEditor
   @state() private _config!: DayBriefCardConfig;
 
   public setConfig(config: DayBriefCardConfig): void {
-    this._config = { ...config, calendars: [...(config.calendars ?? [])] };
+    this._config = {
+      ...config,
+      calendars: [...(config.calendars ?? [])],
+      entities: [...(config.entities ?? [])],
+    };
   }
 
   private _update(partial: Partial<DayBriefCardConfig>): void {
@@ -56,7 +71,8 @@ export class DayBriefCardEditor
   }
 
   private _value(ev: Event): string {
-    return (ev.target as HTMLInputElement | HTMLSelectElement).value;
+    return (ev.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement)
+      .value;
   }
 
   private _onWeather(ev: Event): void {
@@ -64,17 +80,15 @@ export class DayBriefCardEditor
   }
 
   private _onCalendars(ev: Event): void {
-    const raw = this._value(ev);
-    const calendars = raw
-      .split(/[\n,]/)
-      .map((item) => item.trim())
-      .filter(Boolean);
-    this._update({ calendars });
+    this._update({ calendars: parseEntityList(this._value(ev)) });
+  }
+
+  private _onEntities(ev: Event): void {
+    this._update({ entities: parseEntityList(this._value(ev)) });
   }
 
   private _onForecast(ev: Event): void {
-    const value = this._value(ev) as ForecastType;
-    this._update({ forecast_type: value });
+    this._update({ forecast_type: this._value(ev) as ForecastType });
   }
 
   private _onHorizon(ev: Event): void {
@@ -90,6 +104,11 @@ export class DayBriefCardEditor
 
   private _onMode(ev: Event): void {
     this._update({ summary_mode: this._value(ev) as SummaryMode });
+  }
+
+  private _onPrompt(ev: Event): void {
+    const value = this._value(ev).trim();
+    this._update({ summary_prompt: value || undefined });
   }
 
   private _onCache(ev: Event): void {
@@ -137,6 +156,7 @@ export class DayBriefCardEditor
     }
 
     const calendars = this._config.calendars ?? [];
+    const entities = this._config.entities ?? [];
     const weatherEntities = this._weatherEntities();
     const calendarEntities = this._calendarEntities();
 
@@ -161,7 +181,10 @@ export class DayBriefCardEditor
             <option value="">Select weather…</option>
             ${weatherEntities.map(
               (id) =>
-                html`<option value=${id} ?selected=${id === this._config.weather_entity}>
+                html`<option
+                  value=${id}
+                  ?selected=${id === this._config.weather_entity}
+                >
                   ${id}
                 </option>`,
             )}
@@ -175,7 +198,7 @@ export class DayBriefCardEditor
                 <textarea
                   rows="3"
                   placeholder="calendar.personal, calendar.work"
-                  .value=${calendars.join(", ")}
+                  .value=${calendars.join("\n")}
                   @change=${this._onCalendars}
                 ></textarea>
               `
@@ -196,6 +219,20 @@ export class DayBriefCardEditor
                 </div>
               `}
         </fieldset>
+
+        <label>
+          Extra entities
+          <textarea
+            rows="4"
+            placeholder="person.jens_2&#10;sensor.abfallrestmuell&#10;binary_sensor.haustur"
+            .value=${entities.join("\n")}
+            @change=${this._onEntities}
+          ></textarea>
+          <span class="hint"
+            >One entity per line. Included in the brief and shown under
+            Context.</span
+          >
+        </label>
 
         <label>
           Forecast type
@@ -231,7 +268,7 @@ export class DayBriefCardEditor
           <input
             type="text"
             .value=${this._config.agent_id ?? ""}
-            placeholder="conversation.home_assistant"
+            placeholder="conversation.openai"
             @change=${this._onAgent}
           />
         </label>
@@ -252,6 +289,20 @@ export class DayBriefCardEditor
                 </option>`,
             )}
           </select>
+        </label>
+
+        <label>
+          System prompt
+          <textarea
+            rows="5"
+            placeholder=${DEFAULT_SUMMARY_PROMPT}
+            .value=${this._config.summary_prompt ?? ""}
+            @change=${this._onPrompt}
+          ></textarea>
+          <span class="hint"
+            >Leave empty for the default. Weather, agenda, and entities are
+            appended automatically.</span
+          >
         </label>
 
         <label>
@@ -295,6 +346,11 @@ export class DayBriefCardEditor
       color: var(--secondary-text-color);
     }
 
+    .hint {
+      font-size: 0.75rem;
+      color: var(--secondary-text-color);
+    }
+
     input,
     select,
     textarea {
@@ -306,6 +362,13 @@ export class DayBriefCardEditor
       background: var(--card-background-color, #fff);
       color: var(--primary-text-color);
       font: inherit;
+    }
+
+    textarea {
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.8rem;
+      line-height: 1.4;
     }
 
     .checks {
@@ -327,4 +390,3 @@ export class DayBriefCardEditor
     }
   `;
 }
-

@@ -22,10 +22,14 @@ export const cardStyles = css`
   }
 
   .header {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
     margin-bottom: 16px;
+  }
+
+  .header-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
   }
 
   .eyebrow {
@@ -42,6 +46,39 @@ export const cardStyles = css`
     font-weight: 600;
     line-height: 1.2;
     color: var(--primary-text-color);
+  }
+
+  .refresh-btn {
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--primary-text-color) 8%, transparent);
+    color: var(--primary-text-color);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .refresh-btn:hover {
+    background: color-mix(in srgb, var(--primary-color, #03a9f4) 18%, transparent);
+  }
+
+  .refresh-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .spin {
+    display: inline-block;
+    animation: day-brief-spin 0.8s linear infinite;
+  }
+
+  @keyframes day-brief-spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .brief {
@@ -190,6 +227,37 @@ export const cardStyles = css`
     margin: 2px 0 0;
     font-size: 0.75rem;
     color: var(--secondary-text-color);
+  }
+
+  .entity-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+  }
+
+  .entity-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: baseline;
+  }
+
+  .entity-name {
+    font-size: 0.9rem;
+    color: var(--primary-text-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .entity-state {
+    flex: 0 0 auto;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--secondary-text-color);
+    text-align: right;
   }
 
   .empty,

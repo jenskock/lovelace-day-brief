@@ -2,7 +2,15 @@ import { LitElement, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { CARD_NAME, CARD_TYPE, CARD_VERSION, EDITOR_NAME } from "./const";
 import { fetchCalendarEvents, formatEventTime } from "./data/calendar";
-import { buildSummaryDigest, resolveSummary } from "./data/summary";
+import {
+  readEntitySnapshots,
+  type EntitySnapshot,
+} from "./data/entities";
+import {
+  buildSummaryDigest,
+  invalidateSummaryCache,
+  resolveSummary,
+} from "./data/summary";
 import {
   entityChanged,
   formatTemperature,
@@ -36,10 +44,12 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
   @state() private _weather: WeatherSnapshot | null = null;
   @state() private _forecast: WeatherForecastEntry[] = [];
   @state() private _events: CalendarEvent[] = [];
+  @state() private _entities: EntitySnapshot[] = [];
   @state() private _summary = "";
   @state() private _summarySource: "ai" | "local" | "loading" = "loading";
   @state() private _errors: string[] = [];
   @state() private _loadingEvents = false;
+  @state() private _refreshing = false;
 
   private _unsubForecast?: () => void;
   private _refreshTimer?: number;
@@ -51,6 +61,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     return {
       weather_entity: "weather.home",
       calendars: ["calendar.home"],
+      entities: [],
       forecast_type: "daily",
       summary_mode: "auto",
     };
@@ -71,6 +82,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       summary_mode: DEFAULT_MODE,
       cache_minutes: DEFAULT_CACHE,
       calendars: [],
+      entities: [],
       ...config,
     };
   }
@@ -99,6 +111,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
 
     if (changed.has("hass") || changed.has("_config")) {
       this._syncWeatherFromHass();
+      this._syncEntitiesFromHass();
       void this._ensureForecastSubscription();
     }
 
@@ -108,7 +121,12 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
   }
 
   protected shouldUpdate(changed: Map<string, unknown>): boolean {
-    if (changed.has("_config") || changed.has("_weather") || changed.has("_forecast")) {
+    if (
+      changed.has("_config") ||
+      changed.has("_weather") ||
+      changed.has("_forecast") ||
+      changed.has("_entities")
+    ) {
       return true;
     }
     if (
@@ -116,16 +134,29 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       changed.has("_summary") ||
       changed.has("_summarySource") ||
       changed.has("_errors") ||
-      changed.has("_loadingEvents")
+      changed.has("_loadingEvents") ||
+      changed.has("_refreshing")
     ) {
       return true;
     }
-    if (changed.has("hass") && this._config?.weather_entity) {
+    if (changed.has("hass")) {
       const prev = changed.get("hass") as HomeAssistant | undefined;
-      return entityChanged(
-        prev?.states?.[this._config.weather_entity],
-        this.hass?.states?.[this._config.weather_entity],
-      );
+      if (
+        this._config?.weather_entity &&
+        entityChanged(
+          prev?.states?.[this._config.weather_entity],
+          this.hass?.states?.[this._config.weather_entity],
+        )
+      ) {
+        return true;
+      }
+      for (const entityId of this._config?.entities ?? []) {
+        if (
+          entityChanged(prev?.states?.[entityId], this.hass?.states?.[entityId])
+        ) {
+          return true;
+        }
+      }
     }
     return false;
   }
@@ -151,6 +182,17 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     }
   }
 
+  private _cacheKey(): string {
+    return [
+      this._config.weather_entity ?? "",
+      ...(this._config.calendars ?? []),
+      ...(this._config.entities ?? []),
+      this._config.summary_mode ?? DEFAULT_MODE,
+      this._config.agent_id ?? "",
+      this._config.summary_prompt ?? "",
+    ].join("|");
+  }
+
   private _syncWeatherFromHass(): void {
     const entityId = this._config.weather_entity;
     if (!entityId) {
@@ -164,6 +206,17 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       return;
     }
     this._weather = { ...snapshot, forecast: this._forecast };
+  }
+
+  private _syncEntitiesFromHass(): void {
+    const { entities, missing } = readEntitySnapshots(
+      this.hass,
+      this._config.entities ?? [],
+    );
+    this._entities = entities;
+    for (const entityId of missing) {
+      this._pushError(`Entity not found: ${entityId}`);
+    }
   }
 
   private async _ensureForecastSubscription(): Promise<void> {
@@ -222,7 +275,24 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     }
   }
 
-  private async _refreshData(forceSummary: boolean): Promise<void> {
+  private async _onManualRefresh(ev: Event): Promise<void> {
+    ev.stopPropagation();
+    if (this._refreshing) {
+      return;
+    }
+    this._refreshing = true;
+    invalidateSummaryCache(this._cacheKey());
+    try {
+      await this._refreshData(true, true);
+    } finally {
+      this._refreshing = false;
+    }
+  }
+
+  private async _refreshData(
+    forceSummary: boolean,
+    forceAi = false,
+  ): Promise<void> {
     if (!this.hass || !this._config) {
       return;
     }
@@ -230,6 +300,8 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     const generation = ++this._fetchGeneration;
     const errors: string[] = [];
     this._loadingEvents = true;
+    this._syncWeatherFromHass();
+    this._syncEntitiesFromHass();
 
     const calendars = this._config.calendars ?? [];
     const horizon = this._config.horizon_hours ?? DEFAULT_HORIZON;
@@ -253,11 +325,20 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       errors.push(`Weather entity not found: ${this._config.weather_entity}`);
     }
 
-    this._errors = errors;
-    await this._refreshSummary(forceSummary);
+    for (const entityId of this._config.entities ?? []) {
+      if (!this.hass.states[entityId]) {
+        errors.push(`Entity not found: ${entityId}`);
+      }
+    }
+
+    this._errors = [...new Set(errors)].slice(-6);
+    await this._refreshSummary(forceSummary, forceAi);
   }
 
-  private async _refreshSummary(force: boolean): Promise<void> {
+  private async _refreshSummary(
+    force: boolean,
+    forceAi = false,
+  ): Promise<void> {
     if (!this.hass || !this._config) {
       return;
     }
@@ -266,23 +347,18 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     const cacheMinutes = this._config.cache_minutes ?? DEFAULT_CACHE;
     const locale = this.hass.locale?.language ?? "en";
     const timeZone = this.hass.config.time_zone;
-    const digest = buildSummaryDigest(
-      this._weather,
-      this._events,
-      new Date(),
+    const digest = buildSummaryDigest({
+      weather: this._weather,
+      events: this._events,
+      entities: this._entities,
+      now: new Date(),
       locale,
       timeZone,
-    );
-    const cacheKey = [
-      this._config.weather_entity ?? "",
-      ...(this._config.calendars ?? []),
-      mode,
-      this._config.agent_id ?? "",
-    ].join("|");
+      summaryPrompt: this._config.summary_prompt,
+    });
+    const cacheKey = this._cacheKey();
 
-    if (!force && this._summary && this._summarySource !== "loading") {
-      // Still resolve — cache layer short-circuits when digest matches.
-    } else {
+    if (force || forceAi || !this._summary || this._summarySource === "loading") {
       this._summarySource = "loading";
     }
 
@@ -294,6 +370,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
         digest,
         cacheKey,
         cacheMinutes,
+        force: forceAi,
       });
       this._summary = result.text;
       this._summarySource = result.source;
@@ -349,12 +426,28 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     return html`
       <ha-card>
         <div class="header">
-          <p class="eyebrow">Today</p>
-          <h2 class="title">${this._dayTitle()}</h2>
+          <div class="header-row">
+            <div>
+              <p class="eyebrow">Today</p>
+              <h2 class="title">${this._dayTitle()}</h2>
+            </div>
+            <button
+              class="refresh-btn"
+              type="button"
+              title="Refresh brief"
+              aria-label="Refresh brief"
+              ?disabled=${this._refreshing}
+              @click=${this._onManualRefresh}
+            >
+              <span class=${this._refreshing ? "spin" : ""}>↻</span>
+            </button>
+          </div>
         </div>
 
         <p
-          class="brief ${this._summarySource === "loading" ? "loading" : ""}"
+          class="brief ${this._summarySource === "loading" || this._refreshing
+            ? "loading"
+            : ""}"
           data-source=${this._summarySource}
         >
           ${this._summarySource === "loading" && !this._summary
@@ -434,7 +527,10 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
             ${this._loadingEvents && this._events.length === 0
               ? html`<p class="empty loading">Loading calendars…</p>`
               : this._events.length === 0
-                ? html`<p class="empty">No meetings in the next ${this._config.horizon_hours ?? DEFAULT_HORIZON} hours.</p>`
+                ? html`<p class="empty">
+                    No meetings in the next
+                    ${this._config.horizon_hours ?? DEFAULT_HORIZON} hours.
+                  </p>`
                 : html`
                     <ul class="events">
                       ${this._events.map(
@@ -463,6 +559,24 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
                     </ul>
                   `}
           </section>
+
+          ${this._entities.length
+            ? html`
+                <section>
+                  <h3 class="section-title">Context</h3>
+                  <ul class="entity-list">
+                    ${this._entities.map(
+                      (entity) => html`
+                        <li class="entity-row">
+                          <span class="entity-name">${entity.name}</span>
+                          <span class="entity-state">${entity.state}</span>
+                        </li>
+                      `,
+                    )}
+                  </ul>
+                </section>
+              `
+            : nothing}
         </div>
 
         ${this._errors.length
@@ -486,7 +600,7 @@ window.customCards.push({
   type: CARD_TYPE,
   name: CARD_NAME,
   description:
-    "AI-first day brief with weather, multi-calendar meetings, and a short narrative.",
+    "AI-first day brief with weather, calendars, extra entities, and a short narrative.",
   preview: true,
   documentationURL: "https://github.com/jenskock/lovelace-day-brief",
 });

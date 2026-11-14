@@ -92,7 +92,12 @@ export function formatTemperature(
     return "—";
   }
   const rounded = Number.isInteger(value) ? String(value) : value.toFixed(1);
-  return unit ? `${rounded}°${unit}` : `${rounded}°`;
+  if (!unit) {
+    return `${rounded}°`;
+  }
+  // HA may provide "°C", "°F", or bare "C"/"F".
+  const normalized = unit.includes("°") ? unit : `°${unit}`;
+  return `${rounded}${normalized}`;
 }
 
 export function entityChanged(
