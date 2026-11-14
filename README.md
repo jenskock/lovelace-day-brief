@@ -1,6 +1,6 @@
 # Day Brief Card
 
-AI-first Home Assistant Lovelace card for today: weather, meetings from your calendars, extra entities, and a short narrative brief.
+AI-first Home Assistant Lovelace card for today: weather, meetings, household context, and a short narrative brief.
 
 ![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.4%2B-blue.svg)
@@ -22,25 +22,34 @@ resources:
 
 ## Usage
 
+Personal details (names, birthdays, pets) belong in **card config**, not in the shared source.
+
 ```yaml
 type: custom:day-brief-card
-weather_entity: weather.zuhause
+weather_entity: weather.home
 calendars:
-  - calendar.kalender
-  - calendar.jenny
+  - calendar.family
+  - calendar.birthdays
 entities:
-  - person.jens_2
-  - person.jenny
-  - sensor.abfallrestmuell
+  - person.alex
+  - person.sam
+  - sensor.solar_power
+  - sensor.trash_residual
+  - binary_sensor.living_room_window
+  - sensor.heating_oil
+  - vacuum.robot
+context_notes: |
+  Family members, pets, school notes…
+birthdays:
+  - name: Alex
+    date: "1990-04-30"
+  - name: Sam
+    date: "2018-12-28"
 forecast_type: daily
 horizon_hours: 24
-agent_id: conversation.openai
 summary_mode: auto
-summary_prompt: |
-  Schreibe auf Deutsch 1–3 kurze Sätze für ein Home-Dashboard.
-  Nur zusammenfassen. Keine Geräte steuern, keine Rückfragen.
-cache_minutes: 30
-title: Day Brief
+cache_minutes: 15
+agent_id: conversation.your_llm_agent
 ```
 
 ### Options
@@ -48,47 +57,31 @@ title: Day Brief
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `weather_entity` | string | — | Weather entity for current conditions |
-| `calendars` | string[] | `[]` | Calendar entities to merge for today’s agenda |
-| `entities` | string[] | `[]` | Any extra HA entities to include in the brief + Context section |
+| `calendars` | string[] | `[]` | Calendar entities for today’s agenda |
+| `entities` | string[] | `[]` | Extra HA entities (people, solar, trash, windows, oil, vacuum/mower, …) |
+| `cameras` | string[] | `[]` | Camera entities shown as live feeds at the bottom |
+| `birthdays` | `{name,date}[]` | `[]` | Birthdays as `YYYY-MM-DD`; surfaced if within 14 days |
+| `context_notes` | string | — | Free-text household context for the prompt |
 | `forecast_type` | `daily` \| `hourly` \| `twice_daily` \| `none` | `daily` | Forecast subscription type |
-| `horizon_hours` | number | `24` | How far ahead to fetch calendar events |
+| `horizon_hours` | number | `24` | Calendar look-ahead |
 | `agent_id` | string | — | Conversation agent for the AI brief |
-| `summary_mode` | `auto` \| `ai` \| `local` | `auto` | `auto` uses AI when available, else local text |
-| `summary_prompt` | string | built-in default | System/instruction prompt; weather, agenda, entities are appended |
-| `cache_minutes` | number | `30` | Cache AI responses for identical digests |
+| `summary_mode` | `auto` \| `ai` \| `local` | `auto` | AI when available, else local text |
+| `summary_prompt` | string | built-in default | Optional override of the system prompt |
+| `cache_minutes` | number | `15` | Cache AI responses for identical digests |
 | `title` | string | — | Optional card title override |
 
-Tap the **↻** button on the card to force a refresh (clears cache and re-runs the brief).
+Tap **↻** to force a refresh. Auto-refresh runs every **15 minutes**.
 
 ## How it works
 
-- **Weather** reads the entity state and (optionally) subscribes to `weather/subscribe_forecast`.
-- **Meetings** call `calendar.get_events` for every configured calendar, then merge and sort.
-- **Entities** snapshot any configured states into the prompt and a Context list.
-- **Brief** uses your `summary_prompt` (or the default), digests weather + events + entities, and in `auto`/`ai` mode calls `conversation/process`. If AI is unavailable or fails, a local template summary is shown.
+- **Weather + forecast** → clothing hint + rain outlook  
+- **Calendars** → today’s agenda (+ birthday-like event titles)  
+- **Entities** auto-bucketed: people, solar, trash, sun, alerts, open windows, heating oil, appliances needing attention  
+- **Birthdays / context_notes** → structured prompt sections (your private YAML only)  
+- **School day** → if notes mention school/Schule and it’s a weekday morning  
+- **Brief** via `conversation/process`, with a solid German local fallback  
 
-No API keys live in the card — AI goes through Home Assistant’s conversation agent only.
-
-## Sample dashboard view
-
-```yaml
-title: Heute
-path: heute
-type: panel
-cards:
-  - type: custom:day-brief-card
-    weather_entity: weather.zuhause
-    calendars:
-      - calendar.kalender
-      - calendar.jenny
-      - calendar.geburtstage
-      - calendar.mullmax_2
-    entities:
-      - person.jens_2
-      - person.jenny
-    forecast_type: daily
-    summary_mode: auto
-```
+No API keys in the card. No personal household facts in the repository defaults.
 
 ## Development
 

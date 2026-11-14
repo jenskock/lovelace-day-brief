@@ -1,12 +1,19 @@
 export type ForecastType = "daily" | "hourly" | "twice_daily" | "none";
 export type SummaryMode = "auto" | "ai" | "local";
 
+export interface BirthdayConfig {
+  name: string;
+  date: string;
+}
+
 export interface DayBriefCardConfig {
   type?: string;
   title?: string;
   weather_entity?: string;
   calendars?: string[];
   entities?: string[];
+  cameras?: string[];
+  birthdays?: BirthdayConfig[];
   forecast_type?: ForecastType;
   horizon_hours?: number;
   agent_id?: string;

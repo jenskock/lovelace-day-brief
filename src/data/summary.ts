@@ -1,12 +1,18 @@
 import { DEFAULT_SUMMARY_PROMPT } from "../const";
 import type {
+  BirthdayConfig,
   CalendarEvent,
   ConversationProcessResult,
   HomeAssistant,
   SummaryMode,
+  WeatherForecastEntry,
 } from "../types";
+import {
+  formatBirthdayLine,
+  upcomingBirthdays,
+  type UpcomingBirthday,
+} from "./birthdays";
 import type { EntitySnapshot } from "./entities";
-import type { WeatherForecastEntry } from "../types";
 import {
   formatTemperature,
   type WeatherSnapshot,
@@ -122,6 +128,43 @@ function dayPartLabel(part: DayPart, german: boolean): string {
   }
 }
 
+function friendlyGreeting(part: DayPart, german: boolean): string {
+  if (!german) {
+    switch (part) {
+      case "morgen":
+        return "Good morning, family!";
+      case "vormittag":
+        return "Hi family!";
+      case "nachmittag":
+        return "Good afternoon, family!";
+      case "abend":
+        return "Good evening, family!";
+      case "nacht":
+        return "Hey family — still up?";
+      default: {
+        const _exhaustive: never = part;
+        return _exhaustive;
+      }
+    }
+  }
+  switch (part) {
+    case "morgen":
+      return "Guten Morgen, Familie!";
+    case "vormittag":
+      return "Moin, Familie!";
+    case "nachmittag":
+      return "Hallo Familie!";
+    case "abend":
+      return "Guten Abend, Familie!";
+    case "nacht":
+      return "Hey Familie — noch wach?";
+    default: {
+      const _exhaustive: never = part;
+      return _exhaustive;
+    }
+  }
+}
+
 function weatherLabel(condition: string, german: boolean): string {
   if (!condition || condition === "unknown" || condition === "unavailable") {
     return german ? "Wetter unklar" : "Weather unavailable";
@@ -173,12 +216,36 @@ function isUnavailable(state: string): boolean {
   );
 }
 
+function needsApplianceAttention(entity: EntitySnapshot): boolean {
+  const state = entity.state.trim().toLowerCase();
+  const idle = new Set([
+    "docked",
+    "idle",
+    "home",
+    "off",
+    "unavailable",
+    "unknown",
+    "charging",
+    "paused",
+    "standby",
+  ]);
+  return !idle.has(state);
+}
+
+function isOpenWindow(entity: EntitySnapshot): boolean {
+  const state = entity.state.trim().toLowerCase();
+  return state === "on" || state === "open" || state === "opened";
+}
+
 function categorizeEntities(entities: EntitySnapshot[]): {
   people: EntitySnapshot[];
   solar: EntitySnapshot[];
   trash: EntitySnapshot[];
   sun: EntitySnapshot[];
   alerts: EntitySnapshot[];
+  windows: EntitySnapshot[];
+  heating: EntitySnapshot[];
+  appliances: EntitySnapshot[];
   other: EntitySnapshot[];
 } {
   const people: EntitySnapshot[] = [];
@@ -186,6 +253,9 @@ function categorizeEntities(entities: EntitySnapshot[]): {
   const trash: EntitySnapshot[] = [];
   const sun: EntitySnapshot[] = [];
   const alerts: EntitySnapshot[] = [];
+  const windows: EntitySnapshot[] = [];
+  const heating: EntitySnapshot[] = [];
+  const appliances: EntitySnapshot[] = [];
   const other: EntitySnapshot[] = [];
 
   for (const entity of entities) {
@@ -232,12 +302,90 @@ function categorizeEntities(entities: EntitySnapshot[]): {
       name.includes("warnung")
     ) {
       alerts.push(entity);
+    } else if (
+      id.includes("fenster") ||
+      id.includes("window") ||
+      name.includes("fenster") ||
+      name.includes("window")
+    ) {
+      if (isOpenWindow(entity)) {
+        windows.push(entity);
+      }
+    } else if (
+      id.includes("heizoel") ||
+      id.includes("heizöl") ||
+      id.includes("oil") ||
+      name.includes("heizöl") ||
+      name.includes("heizoel")
+    ) {
+      heating.push(entity);
+    } else if (
+      entity.domain === "vacuum" ||
+      entity.domain === "lawn_mower" ||
+      id.includes("vacuum") ||
+      id.includes("lawn_mower") ||
+      name.includes("mäher") ||
+      name.includes("maeh") ||
+      name.includes("sauger")
+    ) {
+      if (needsApplianceAttention(entity)) {
+        appliances.push(entity);
+      }
     } else {
       other.push(entity);
     }
   }
 
-  return { people, solar, trash, sun, alerts, other };
+  return {
+    people,
+    solar,
+    trash,
+    sun,
+    alerts,
+    windows,
+    heating,
+    appliances,
+    other,
+  };
+}
+
+function isSchoolDay(
+  now: Date,
+  timeZone: string,
+  contextNotes: string | undefined,
+  part: DayPart,
+): boolean {
+  const notes = (contextNotes ?? "").toLowerCase();
+  const mentionsSchool =
+    notes.includes("schule") ||
+    notes.includes("school") ||
+    notes.includes("schultag");
+  if (!mentionsSchool) {
+    return false;
+  }
+  const weekday = new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+    timeZone,
+  }).format(now);
+  const isWeekday = !["Sat", "Sun"].includes(weekday);
+  return isWeekday && (part === "morgen" || part === "vormittag");
+}
+
+function calendarBirthdayHints(
+  events: CalendarEvent[],
+  german: boolean,
+): string[] {
+  return events
+    .filter((event) => {
+      const summary = (event.summary ?? "").toLowerCase();
+      return (
+        summary.includes("geburtstag") ||
+        summary.includes("birthday") ||
+        summary.includes("bday")
+      );
+    })
+    .slice(0, 5)
+    .map((event) => eventLine(event, german));
 }
 
 function eventLine(event: CalendarEvent, german: boolean): string {
@@ -323,36 +471,46 @@ function rainOutlook(
 function buildLocalBrief(options: {
   german: boolean;
   dayLabel: string;
-  partLabel: string;
+  part: DayPart;
   weather: WeatherSnapshot | null;
   weatherLine: string;
   clothing: string | null;
   rainLine: string | null;
+  schoolDay: boolean;
+  birthdays: UpcomingBirthday[];
   events: CalendarEvent[];
   people: EntitySnapshot[];
   solar: EntitySnapshot[];
   trash: EntitySnapshot[];
   alerts: EntitySnapshot[];
+  windows: EntitySnapshot[];
+  heating: EntitySnapshot[];
+  appliances: EntitySnapshot[];
 }): string {
   const {
     german,
     dayLabel,
-    partLabel,
+    part,
     weather,
     weatherLine,
     clothing,
     rainLine,
+    schoolDay,
+    birthdays,
     events,
     people,
     solar,
     trash,
     alerts,
+    windows,
+    heating,
+    appliances,
   } = options;
 
   const parts: string[] = [];
 
   if (german) {
-    parts.push(`Guten ${partLabel} — ${dayLabel}.`);
+    parts.push(`${friendlyGreeting(part, true)} ${dayLabel}.`);
     if (weather) {
       parts.push(
         clothing
@@ -362,6 +520,17 @@ function buildLocalBrief(options: {
     }
     if (rainLine) {
       parts.push(`${rainLine}.`);
+    }
+    if (schoolDay && (part === "morgen" || part === "vormittag")) {
+      parts.push("Schultag — morgens an die Schule denken.");
+    }
+    if (birthdays.length) {
+      const first = birthdays[0];
+      parts.push(
+        first.daysUntil === 0
+          ? `Heute hat ${first.name} Geburtstag (${first.ageTurning})!`
+          : `Bald Geburtstag: ${first.name} in ${first.daysUntil} Tag(en).`,
+      );
     }
     if (events.length === 0) {
       parts.push("Heute stehen keine Termine an.");
@@ -390,6 +559,23 @@ function buildLocalBrief(options: {
         `Müll: ${trash.map((e) => `${e.name} ${e.state}`).join(", ")}.`,
       );
     }
+    if (windows.length) {
+      parts.push(
+        `Fenster offen: ${windows.map((e) => e.name).join(", ")}.`,
+      );
+    }
+    if (heating.length) {
+      parts.push(
+        `Heizöl: ${heating.map((e) => `${e.name} ${e.state}`).join(", ")}.`,
+      );
+    }
+    if (appliances.length) {
+      parts.push(
+        `Geräte: ${appliances
+          .map((e) => `${e.name} ${e.state}`)
+          .join(", ")}.`,
+      );
+    }
     if (alerts.length) {
       const active = alerts.filter((e) => e.state !== "0" && e.state !== "ok");
       if (active.length) {
@@ -406,7 +592,7 @@ function buildLocalBrief(options: {
       );
     }
   } else {
-    parts.push(`Good ${partLabel} — ${dayLabel}.`);
+    parts.push(`${friendlyGreeting(part, false)} ${dayLabel}.`);
     if (weather) {
       parts.push(
         clothing
@@ -416,6 +602,17 @@ function buildLocalBrief(options: {
     }
     if (rainLine) {
       parts.push(`${rainLine}.`);
+    }
+    if (schoolDay && (part === "morgen" || part === "vormittag")) {
+      parts.push("School day — keep the morning routine in mind.");
+    }
+    if (birthdays.length) {
+      const first = birthdays[0];
+      parts.push(
+        first.daysUntil === 0
+          ? `Today is ${first.name}'s birthday (${first.ageTurning})!`
+          : `Birthday soon: ${first.name} in ${first.daysUntil} day(s).`,
+      );
     }
     parts.push(
       events.length === 0
@@ -435,6 +632,21 @@ function buildLocalBrief(options: {
         `Trash: ${trash.map((e) => `${e.name} ${e.state}`).join(", ")}.`,
       );
     }
+    if (windows.length) {
+      parts.push(`Open windows: ${windows.map((e) => e.name).join(", ")}.`);
+    }
+    if (heating.length) {
+      parts.push(
+        `Heating oil: ${heating.map((e) => `${e.name} ${e.state}`).join(", ")}.`,
+      );
+    }
+    if (appliances.length) {
+      parts.push(
+        `Devices needing attention: ${appliances
+          .map((e) => `${e.name} ${e.state}`)
+          .join(", ")}.`,
+      );
+    }
   }
 
   return parts.join(" ");
@@ -445,6 +657,7 @@ export function buildSummaryDigest(options: {
   forecast?: WeatherForecastEntry[];
   events: CalendarEvent[];
   entities: EntitySnapshot[];
+  birthdays?: BirthdayConfig[];
   now: Date;
   locale: string;
   timeZone: string;
@@ -456,6 +669,7 @@ export function buildSummaryDigest(options: {
     forecast = weather?.forecast ?? [],
     events,
     entities,
+    birthdays = [],
     now,
     locale,
     timeZone,
@@ -505,6 +719,12 @@ export function buildSummaryDigest(options: {
     german,
   );
   const rainLine = rainOutlook(forecast, locale, timeZone, german);
+  const upcoming = upcomingBirthdays(birthdays, now, timeZone, 14);
+  const birthdayLines = [
+    ...upcoming.map((entry) => formatBirthdayLine(entry, german)),
+    ...calendarBirthdayHints(events, german),
+  ];
+  const schoolDay = isSchoolDay(now, timeZone, contextNotes, part);
 
   const agendaLines =
     events.length === 0
@@ -518,13 +738,9 @@ export function buildSummaryDigest(options: {
     section(
       german ? "ZEIT" : "TIME",
       [
-        german
-          ? `Datum: ${dayLabel}`
-          : `Date: ${dayLabel}`,
+        german ? `Datum: ${dayLabel}` : `Date: ${dayLabel}`,
         german ? `Uhrzeit: ${timeLabel}` : `Time: ${timeLabel}`,
-        german
-          ? `Tageszeit: ${partLabel}`
-          : `Time of day: ${partLabel}`,
+        german ? `Tageszeit: ${partLabel}` : `Time of day: ${partLabel}`,
       ],
       "",
     ),
@@ -532,11 +748,27 @@ export function buildSummaryDigest(options: {
       ? [
           section(
             german ? "HAUSHALT" : "HOUSEHOLD",
-            household.split("\n").map((line) => line.trim()).filter(Boolean),
+            household
+              .split("\n")
+              .map((line) => line.trim())
+              .filter(Boolean),
             "",
           ),
         ]
       : []),
+    section(
+      german ? "SCHULTAG" : "SCHOOL_DAY",
+      [
+        schoolDay
+          ? german
+            ? "ja — Wochentag und Schulkontext"
+            : "yes — weekday with school context"
+          : german
+            ? "nein"
+            : "no",
+      ],
+      "",
+    ),
     section(
       german ? "WETTER" : "WEATHER",
       [
@@ -554,6 +786,13 @@ export function buildSummaryDigest(options: {
       german ? "VORHERSAGE" : "FORECAST",
       forecastLines,
       german ? "Keine Vorhersage." : "No forecast.",
+    ),
+    section(
+      german ? "GEBURTSTAGE" : "BIRTHDAYS",
+      birthdayLines,
+      german
+        ? "Keine Geburtstage in den nächsten 14 Tagen."
+        : "No birthdays in the next 14 days.",
     ),
     section(
       german ? "TERMINE" : "AGENDA",
@@ -579,6 +818,23 @@ export function buildSummaryDigest(options: {
       german ? "SONNE" : "SUN",
       buckets.sun.map(entityLine),
       german ? "Keine Sonnenzeiten." : "No sun times.",
+    ),
+    section(
+      german ? "FENSTER" : "WINDOWS",
+      buckets.windows.map(entityLine),
+      german ? "Keine offenen Fenster." : "No open windows.",
+    ),
+    section(
+      german ? "HEIZOEL" : "HEATING_OIL",
+      buckets.heating.map(entityLine),
+      german ? "Kein Heizöl-Sensor." : "No heating-oil sensor.",
+    ),
+    section(
+      german ? "GERAETE" : "APPLIANCES",
+      buckets.appliances.map(entityLine),
+      german
+        ? "Keine Geräte mit Handlungsbedarf."
+        : "No appliances needing attention.",
     ),
     section(
       german ? "WARNUNGEN" : "ALERTS",
@@ -608,16 +864,21 @@ export function buildSummaryDigest(options: {
   const local = buildLocalBrief({
     german,
     dayLabel,
-    partLabel,
+    part,
     weather,
     weatherLine,
     clothing,
     rainLine,
+    schoolDay,
+    birthdays: upcoming,
     events,
     people: buckets.people,
     solar: buckets.solar,
     trash: buckets.trash,
     alerts: buckets.alerts,
+    windows: buckets.windows,
+    heating: buckets.heating,
+    appliances: buckets.appliances,
   });
 
   return {

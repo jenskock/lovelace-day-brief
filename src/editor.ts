@@ -1,6 +1,10 @@
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { DEFAULT_SUMMARY_PROMPT, EDITOR_NAME } from "./const";
+import {
+  parseBirthdayLines,
+  serializeBirthdayLines,
+} from "./data/birthdays";
 import type {
   DayBriefCardConfig,
   ForecastType,
@@ -55,6 +59,8 @@ export class DayBriefCardEditor
       ...config,
       calendars: [...(config.calendars ?? [])],
       entities: [...(config.entities ?? [])],
+      cameras: [...(config.cameras ?? [])],
+      birthdays: [...(config.birthdays ?? [])],
     };
   }
 
@@ -87,6 +93,10 @@ export class DayBriefCardEditor
     this._update({ entities: parseEntityList(this._value(ev)) });
   }
 
+  private _onCameras(ev: Event): void {
+    this._update({ cameras: parseEntityList(this._value(ev)) });
+  }
+
   private _onForecast(ev: Event): void {
     this._update({ forecast_type: this._value(ev) as ForecastType });
   }
@@ -114,6 +124,11 @@ export class DayBriefCardEditor
   private _onContextNotes(ev: Event): void {
     const value = this._value(ev).trim();
     this._update({ context_notes: value || undefined });
+  }
+
+  private _onBirthdays(ev: Event): void {
+    const birthdays = parseBirthdayLines(this._value(ev));
+    this._update({ birthdays: birthdays.length ? birthdays : undefined });
   }
 
   private _onCache(ev: Event): void {
@@ -229,13 +244,26 @@ export class DayBriefCardEditor
           Extra entities
           <textarea
             rows="4"
-            placeholder="person.jens_2&#10;sensor.abfallrestmuell&#10;binary_sensor.haustur"
+            placeholder="person.alex&#10;sensor.trash&#10;binary_sensor.window"
             .value=${entities.join("\n")}
             @change=${this._onEntities}
           ></textarea>
           <span class="hint"
             >One entity per line. Included in the brief and shown under
             Context.</span
+          >
+        </label>
+
+        <label>
+          Cameras
+          <textarea
+            rows="4"
+            placeholder="camera.front_door&#10;camera.driveway&#10;camera.garden&#10;camera.garage"
+            .value=${(this._config.cameras ?? []).join("\n")}
+            @change=${this._onCameras}
+          ></textarea>
+          <span class="hint"
+            >Live feeds at the bottom (2×2 / 4 across on wide screens).</span
           >
         </label>
 
@@ -300,10 +328,21 @@ export class DayBriefCardEditor
           Household / context notes
           <textarea
             rows="3"
-            placeholder="Familie: Jens, Jenny, Ella (Tochter). Hund: Milo."
+            placeholder="Family members, pets, school notes…"
             .value=${this._config.context_notes ?? ""}
             @change=${this._onContextNotes}
           ></textarea>
+        </label>
+
+        <label>
+          Birthdays
+          <textarea
+            rows="3"
+            placeholder="Alex: 1990-04-30&#10;Sam: 2018-12-28"
+            .value=${serializeBirthdayLines(this._config.birthdays ?? [])}
+            @change=${this._onBirthdays}
+          ></textarea>
+          <span class="hint">One per line: Name: YYYY-MM-DD</span>
         </label>
 
         <label>

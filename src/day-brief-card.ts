@@ -65,6 +65,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       weather_entity: "weather.home",
       calendars: ["calendar.home"],
       entities: [],
+      cameras: [],
       forecast_type: "daily",
       summary_mode: "auto",
     };
@@ -86,6 +87,8 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       cache_minutes: DEFAULT_CACHE,
       calendars: [],
       entities: [],
+      cameras: [],
+      birthdays: [],
       ...config,
     };
   }
@@ -219,6 +222,38 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     }).format(this._now);
   }
 
+  private _cameraName(entityId: string): string {
+    const state = this.hass?.states[entityId];
+    return (
+      this.hass?.entities?.[entityId]?.name ??
+      (typeof state?.attributes.friendly_name === "string"
+        ? state.attributes.friendly_name
+        : entityId.replace(/^camera\./, "").replace(/_/g, " "))
+    );
+  }
+
+  private _cameraSrc(entityId: string): string | null {
+    const state = this.hass?.states[entityId];
+    if (!state) {
+      return null;
+    }
+    const token = state.attributes.access_token;
+    if (typeof token !== "string" || !token) {
+      return null;
+    }
+    return `/api/camera_proxy_stream/${entityId}?token=${encodeURIComponent(token)}`;
+  }
+
+  private _openMoreInfo(entityId: string): void {
+    this.dispatchEvent(
+      new CustomEvent("hass-more-info", {
+        detail: { entityId },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
   private _cacheKey(): string {
     return [
       this._config.weather_entity ?? "",
@@ -228,6 +263,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       this._config.agent_id ?? "",
       this._config.summary_prompt ?? "",
       this._config.context_notes ?? "",
+      JSON.stringify(this._config.birthdays ?? []),
     ].join("|");
   }
 
@@ -390,6 +426,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       forecast: this._forecast,
       events: this._events,
       entities: this._entities,
+      birthdays: this._config.birthdays,
       now: new Date(),
       locale,
       timeZone,
@@ -635,6 +672,37 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
                         </ul>
                       `
                     : nothing}
+                </section>
+              `
+            : nothing}
+
+          ${(this._config.cameras ?? []).length
+            ? html`
+                <section class="cameras">
+                  <h3 class="section-title">Cameras</h3>
+                  <div class="camera-grid">
+                    ${(this._config.cameras ?? []).map((entityId) => {
+                      const src = this._cameraSrc(entityId);
+                      return html`
+                        <button
+                          class="camera-tile"
+                          type="button"
+                          @click=${() => this._openMoreInfo(entityId)}
+                        >
+                          ${src
+                            ? html`<img
+                                class="camera-feed"
+                                src=${src}
+                                alt=${this._cameraName(entityId)}
+                              />`
+                            : html`<div class="camera-missing">No feed</div>`}
+                          <span class="camera-label"
+                            >${this._cameraName(entityId)}</span
+                          >
+                        </button>
+                      `;
+                    })}
+                  </div>
                 </section>
               `
             : nothing}

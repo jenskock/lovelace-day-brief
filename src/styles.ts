@@ -300,6 +300,67 @@ export const cardStyles = css`
     text-align: right;
   }
 
+  .cameras {
+    margin-top: 4px;
+  }
+
+  .camera-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  @media (min-width: 900px) {
+    .camera-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .camera-tile {
+    position: relative;
+    display: block;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--primary-text-color) 8%, transparent);
+    cursor: pointer;
+    aspect-ratio: 16 / 10;
+  }
+
+  .camera-feed {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .camera-missing {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    font-size: 0.85rem;
+    color: var(--secondary-text-color);
+  }
+
+  .camera-label {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 8px 10px 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #fff;
+    text-align: left;
+    background: linear-gradient(
+      transparent,
+      color-mix(in srgb, #000 65%, transparent)
+    );
+  }
+
   .empty,
   .error-chip {
     margin: 0;
