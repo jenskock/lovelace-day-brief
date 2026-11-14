@@ -372,13 +372,13 @@ export const cardStyles = css`
 
   .camera-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
 
-  @media (max-width: 700px) {
+  @media (min-width: 900px) {
     .camera-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
 
@@ -388,12 +388,11 @@ export const cardStyles = css`
     margin: 0;
     padding: 0;
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
     background: color-mix(in srgb, var(--primary-text-color) 8%, transparent);
     cursor: pointer;
-    aspect-ratio: 16 / 9;
-    max-height: 110px;
+    aspect-ratio: 16 / 10;
   }
 
   .camera-feed {
@@ -408,7 +407,7 @@ export const cardStyles = css`
     place-items: center;
     width: 100%;
     height: 100%;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: var(--secondary-text-color);
   }
 
@@ -417,8 +416,8 @@ export const cardStyles = css`
     left: 0;
     right: 0;
     bottom: 0;
-    padding: 6px 8px 4px;
-    font-size: 0.7rem;
+    padding: 8px 10px 6px;
+    font-size: 0.75rem;
     font-weight: 500;
     color: #fff;
     text-align: left;

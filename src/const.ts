@@ -1,4 +1,4 @@
-export const CARD_VERSION = "1.6.5";
+export const CARD_VERSION = "1.6.6";
 export const CARD_NAME = "Day Brief";
 export const CARD_TYPE = "day-brief-card";
 export const EDITOR_NAME = "day-brief-card-editor";

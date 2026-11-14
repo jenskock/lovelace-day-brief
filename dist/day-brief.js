@@ -601,7 +601,7 @@ function we(t) {
 function x(t) {
   return we({ ...t, state: !0, attribute: !1 });
 }
-const Lt = "1.6.5", Qe = "Day Brief", Xe = "day-brief-card", et = "day-brief-card-editor", tt = `
+const Lt = "1.6.6", Qe = "Day Brief", Xe = "day-brief-card", et = "day-brief-card-editor", tt = `
 Du bist ein Home-Dashboard-Redakteur für eine Familien-Tageskarte.
 
 ZIEL
@@ -2087,13 +2087,13 @@ const Nn = Ge`
 
   .camera-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
 
-  @media (max-width: 700px) {
+  @media (min-width: 900px) {
     .camera-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
 
@@ -2103,12 +2103,11 @@ const Nn = Ge`
     margin: 0;
     padding: 0;
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
     background: color-mix(in srgb, var(--primary-text-color) 8%, transparent);
     cursor: pointer;
-    aspect-ratio: 16 / 9;
-    max-height: 110px;
+    aspect-ratio: 16 / 10;
   }
 
   .camera-feed {
@@ -2123,7 +2122,7 @@ const Nn = Ge`
     place-items: center;
     width: 100%;
     height: 100%;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: var(--secondary-text-color);
   }
 
@@ -2132,8 +2131,8 @@ const Nn = Ge`
     left: 0;
     right: 0;
     bottom: 0;
-    padding: 6px 8px 4px;
-    font-size: 0.7rem;
+    padding: 8px 10px 6px;
+    font-size: 0.75rem;
     font-weight: 500;
     color: #fff;
     text-align: left;
