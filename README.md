@@ -69,9 +69,12 @@ agent_id: conversation.your_llm_agent
 | `summary_mode` | `auto` \| `ai` \| `local` | `auto` | AI when available, else local text |
 | `summary_prompt` | string | built-in default | Optional override of the system prompt |
 | `cache_minutes` | number | `15` | Cache AI responses for identical digests |
+| `tts_entity` | string | — | Optional `media_player.*` for HA TTS (else browser speech) |
+| `keep_awake` | boolean | `true` | Subtle Echo Show / Silk keep-awake control |
 | `title` | string | — | Optional card title override |
 
-Tap **↻** to force a refresh. Auto-refresh runs every **15 minutes**.
+Tap **↻** to refresh, **♪** to read the brief aloud.  
+**Keep awake** (footer): tap once after opening on Echo Show — plays near-silent audio so Silk stays open (no green/red banner). Auto-refresh every **15 minutes**.
 
 ## How it works
 

@@ -6,11 +6,13 @@ import {
   readEntitySnapshots,
   type EntitySnapshot,
 } from "./data/entities";
+import { KeepAwakeController } from "./data/keep-awake";
 import {
   buildSummaryDigest,
   invalidateSummaryCache,
   resolveSummary,
 } from "./data/summary";
+import { speakSummary, stopSpeaking } from "./data/tts";
 import {
   entityChanged,
   formatTemperature,
@@ -52,6 +54,8 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
   @state() private _refreshing = false;
   @state() private _contextOpen = false;
   @state() private _now = new Date();
+  @state() private _speaking = false;
+  @state() private _keepAwakeOn = false;
 
   private _unsubForecast?: () => void;
   private _refreshTimer?: number;
@@ -59,6 +63,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
   private _lastWeatherEntity?: string;
   private _lastForecastType?: ForecastType;
   private _fetchGeneration = 0;
+  private _keepAwake = new KeepAwakeController();
 
   public static getStubConfig(): DayBriefCardConfig {
     return {
@@ -110,6 +115,9 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     this._stopRefreshLoop();
     this._stopClock();
     this._teardownForecast();
+    this._keepAwake.stop();
+    this._keepAwakeOn = false;
+    stopSpeaking();
     document.removeEventListener("visibilitychange", this._onVisibility);
   }
 
@@ -146,7 +154,9 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       changed.has("_loadingEvents") ||
       changed.has("_refreshing") ||
       changed.has("_contextOpen") ||
-      changed.has("_now")
+      changed.has("_now") ||
+      changed.has("_speaking") ||
+      changed.has("_keepAwakeOn")
     ) {
       return true;
     }
@@ -365,6 +375,48 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     }
   }
 
+  private async _onSpeak(ev: Event): Promise<void> {
+    ev.stopPropagation();
+    if (!this._summary || this._summarySource === "loading") {
+      return;
+    }
+    if (this._speaking) {
+      stopSpeaking();
+      this._speaking = false;
+      return;
+    }
+    this._speaking = true;
+    try {
+      await speakSummary({
+        hass: this.hass,
+        text: this._summary,
+        language: this.hass?.locale?.language?.startsWith("de")
+          ? "de-DE"
+          : this.hass?.locale?.language,
+        mediaPlayer: this._config.tts_entity,
+      });
+    } catch (error) {
+      this._pushError(
+        error instanceof Error ? `TTS: ${error.message}` : "TTS failed",
+      );
+    } finally {
+      // Browser utterance has no reliable end hook across Silk; clear soon.
+      window.setTimeout(() => {
+        this._speaking = false;
+      }, 1500);
+    }
+  }
+
+  private _onKeepAwake(ev: Event): void {
+    ev.stopPropagation();
+    if (this._keepAwakeOn) {
+      this._keepAwake.stop();
+      this._keepAwakeOn = false;
+      return;
+    }
+    this._keepAwakeOn = this._keepAwake.start();
+  }
+
   private async _refreshData(
     forceSummary: boolean,
     forceAi = false,
@@ -512,16 +564,28 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
               <h2 class="title">${this._dayTitle()}</h2>
               <p class="clock" aria-live="polite">${this._clockLabel()}</p>
             </div>
-            <button
-              class="refresh-btn"
-              type="button"
-              title="Refresh brief"
-              aria-label="Refresh brief"
-              ?disabled=${this._refreshing}
-              @click=${this._onManualRefresh}
-            >
-              <span class=${this._refreshing ? "spin" : ""}>↻</span>
-            </button>
+            <div class="header-actions">
+              <button
+                class="icon-btn"
+                type="button"
+                title="Refresh brief"
+                aria-label="Refresh brief"
+                ?disabled=${this._refreshing}
+                @click=${this._onManualRefresh}
+              >
+                <span class=${this._refreshing ? "spin" : ""}>↻</span>
+              </button>
+              <button
+                class="icon-btn ${this._speaking ? "active" : ""}"
+                type="button"
+                title="Read summary aloud"
+                aria-label="Read summary aloud"
+                ?disabled=${!this._summary || this._summarySource === "loading"}
+                @click=${this._onSpeak}
+              >
+                ♪
+              </button>
+            </div>
           </div>
         </div>
 
@@ -717,6 +781,24 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
                 ${this._errors.map(
                   (err) => html`<span class="error-chip">${err}</span>`,
                 )}
+              </div>
+            `
+          : nothing}
+
+        ${this._config.keep_awake !== false
+          ? html`
+              <div class="footer-bar">
+                <button
+                  class="keep-awake ${this._keepAwakeOn ? "on" : ""}"
+                  type="button"
+                  title=${this._keepAwakeOn
+                    ? "Keep-awake active (tap to stop)"
+                    : "Tap once to keep Echo Show / Silk open"}
+                  @click=${this._onKeepAwake}
+                >
+                  <span class="keep-dot"></span>
+                  <span>${this._keepAwakeOn ? "Awake" : "Keep awake"}</span>
+                </button>
               </div>
             `
           : nothing}

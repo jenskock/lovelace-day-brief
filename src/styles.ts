@@ -6,7 +6,7 @@ export const cardStyles = css`
   }
 
   ha-card {
-    --day-brief-pad: 20px;
+    --day-brief-pad: 22px;
     padding: var(--day-brief-pad);
     background: linear-gradient(
       165deg,
@@ -22,7 +22,7 @@ export const cardStyles = css`
   }
 
   .header {
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
 
   .header-row {
@@ -32,9 +32,15 @@ export const cardStyles = css`
     gap: 12px;
   }
 
+  .header-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
   .eyebrow {
     margin: 0;
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--secondary-text-color);
@@ -42,42 +48,46 @@ export const cardStyles = css`
 
   .title {
     margin: 0;
-    font-size: 1.6rem;
-    font-weight: 600;
-    line-height: 1.2;
+    font-size: 2rem;
+    font-weight: 650;
+    line-height: 1.15;
     color: var(--primary-text-color);
   }
 
   .clock {
-    margin: 6px 0 0;
-    font-size: 2.4rem;
-    font-weight: 600;
+    margin: 8px 0 0;
+    font-size: 3rem;
+    font-weight: 650;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.02em;
     line-height: 1;
     color: var(--primary-text-color);
   }
 
-  .refresh-btn {
+  .icon-btn {
     flex: 0 0 auto;
-    width: 36px;
-    height: 36px;
+    width: 42px;
+    height: 42px;
     border: none;
     border-radius: 50%;
     background: color-mix(in srgb, var(--primary-text-color) 8%, transparent);
     color: var(--primary-text-color);
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     line-height: 1;
     cursor: pointer;
   }
 
-  .refresh-btn:hover {
+  .icon-btn:hover {
     background: color-mix(in srgb, var(--primary-color, #03a9f4) 18%, transparent);
   }
 
-  .refresh-btn:disabled {
+  .icon-btn:disabled {
     opacity: 0.5;
     cursor: default;
+  }
+
+  .icon-btn.active {
+    background: color-mix(in srgb, var(--primary-color, #03a9f4) 22%, transparent);
   }
 
   .spin {
@@ -92,8 +102,8 @@ export const cardStyles = css`
   }
 
   .brief {
-    margin: 0 0 20px;
-    font-size: 1.05rem;
+    margin: 0 0 14px;
+    font-size: 1.35rem;
     line-height: 1.45;
     color: var(--primary-text-color);
   }
@@ -106,14 +116,14 @@ export const cardStyles = css`
     display: inline-flex;
     gap: 8px;
     align-items: center;
-    margin-bottom: 16px;
-    font-size: 0.75rem;
+    margin-bottom: 18px;
+    font-size: 0.85rem;
     color: var(--secondary-text-color);
   }
 
   .dot {
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background: var(--primary-color, #03a9f4);
   }
@@ -124,12 +134,12 @@ export const cardStyles = css`
 
   .sections {
     display: grid;
-    gap: 18px;
+    gap: 20px;
   }
 
   .section-title {
-    margin: 0 0 8px;
-    font-size: 0.8rem;
+    margin: 0 0 10px;
+    font-size: 0.9rem;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--secondary-text-color);
@@ -144,22 +154,22 @@ export const cardStyles = css`
 
   .condition {
     margin: 0;
-    font-size: 1.15rem;
-    font-weight: 500;
+    font-size: 1.4rem;
+    font-weight: 550;
     text-transform: capitalize;
     color: var(--primary-text-color);
   }
 
   .temp {
     margin: 0;
-    font-size: 1.75rem;
-    font-weight: 600;
+    font-size: 2.1rem;
+    font-weight: 650;
     color: var(--primary-text-color);
   }
 
   .weather-meta {
-    margin: 6px 0 0;
-    font-size: 0.85rem;
+    margin: 8px 0 0;
+    font-size: 1rem;
     color: var(--secondary-text-color);
   }
 
@@ -172,8 +182,8 @@ export const cardStyles = css`
   }
 
   .forecast-item {
-    min-width: 64px;
-    padding: 8px 10px;
+    min-width: 72px;
+    padding: 10px 12px;
     border-radius: 10px;
     background: color-mix(
       in srgb,
@@ -185,7 +195,7 @@ export const cardStyles = css`
   .forecast-day,
   .forecast-cond {
     display: block;
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     color: var(--secondary-text-color);
     text-transform: capitalize;
   }
@@ -193,7 +203,7 @@ export const cardStyles = css`
   .forecast-temp {
     display: block;
     margin-top: 4px;
-    font-size: 0.9rem;
+    font-size: 1.05rem;
     font-weight: 600;
     color: var(--primary-text-color);
   }
@@ -203,18 +213,18 @@ export const cardStyles = css`
     margin: 0;
     padding: 0;
     display: grid;
-    gap: 10px;
+    gap: 12px;
   }
 
   .event {
     display: grid;
-    grid-template-columns: 72px 1fr;
-    gap: 10px;
+    grid-template-columns: 88px 1fr;
+    gap: 12px;
     align-items: start;
   }
 
   .event-time {
-    font-size: 0.85rem;
+    font-size: 1rem;
     font-variant-numeric: tabular-nums;
     color: var(--secondary-text-color);
   }
@@ -225,8 +235,8 @@ export const cardStyles = css`
 
   .event-title {
     margin: 0;
-    font-size: 0.95rem;
-    font-weight: 500;
+    font-size: 1.15rem;
+    font-weight: 550;
     color: var(--primary-text-color);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -234,8 +244,8 @@ export const cardStyles = css`
   }
 
   .event-cal {
-    margin: 2px 0 0;
-    font-size: 0.75rem;
+    margin: 3px 0 0;
+    font-size: 0.9rem;
     color: var(--secondary-text-color);
   }
 
@@ -260,12 +270,12 @@ export const cardStyles = css`
 
   .context-meta {
     margin-left: auto;
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     color: var(--secondary-text-color);
   }
 
   .context-chevron {
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     color: var(--secondary-text-color);
   }
 
@@ -285,7 +295,7 @@ export const cardStyles = css`
   }
 
   .entity-name {
-    font-size: 0.9rem;
+    font-size: 1.05rem;
     color: var(--primary-text-color);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -294,25 +304,25 @@ export const cardStyles = css`
 
   .entity-state {
     flex: 0 0 auto;
-    font-size: 0.9rem;
+    font-size: 1.05rem;
     font-weight: 500;
     color: var(--secondary-text-color);
     text-align: right;
   }
 
   .cameras {
-    margin-top: 4px;
+    margin-top: 2px;
   }
 
   .camera-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
   }
 
-  @media (min-width: 900px) {
+  @media (max-width: 700px) {
     .camera-grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
@@ -322,11 +332,12 @@ export const cardStyles = css`
     margin: 0;
     padding: 0;
     border: none;
-    border-radius: 12px;
+    border-radius: 10px;
     overflow: hidden;
     background: color-mix(in srgb, var(--primary-text-color) 8%, transparent);
     cursor: pointer;
-    aspect-ratio: 16 / 10;
+    aspect-ratio: 16 / 9;
+    max-height: 110px;
   }
 
   .camera-feed {
@@ -341,7 +352,7 @@ export const cardStyles = css`
     place-items: center;
     width: 100%;
     height: 100%;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--secondary-text-color);
   }
 
@@ -350,8 +361,8 @@ export const cardStyles = css`
     left: 0;
     right: 0;
     bottom: 0;
-    padding: 8px 10px 6px;
-    font-size: 0.75rem;
+    padding: 6px 8px 4px;
+    font-size: 0.7rem;
     font-weight: 500;
     color: #fff;
     text-align: left;
@@ -361,10 +372,55 @@ export const cardStyles = css`
     );
   }
 
+  .footer-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .keep-awake {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 4px 10px;
+    border: 1px solid color-mix(in srgb, var(--primary-text-color) 12%, transparent);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--secondary-text-color);
+    font-size: 0.75rem;
+    cursor: pointer;
+    opacity: 0.7;
+  }
+
+  .keep-awake:hover {
+    opacity: 1;
+  }
+
+  .keep-awake.on {
+    border-color: color-mix(in srgb, var(--primary-color, #03a9f4) 35%, transparent);
+    color: var(--secondary-text-color);
+    opacity: 0.55;
+  }
+
+  .keep-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--disabled-text-color, #9e9e9e);
+  }
+
+  .keep-awake.on .keep-dot {
+    background: var(--primary-color, #03a9f4);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color, #03a9f4) 18%, transparent);
+  }
+
   .empty,
   .error-chip {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: 1rem;
     color: var(--secondary-text-color);
   }
 

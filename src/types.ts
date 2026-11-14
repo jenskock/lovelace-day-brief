@@ -41,6 +41,10 @@ export interface DayBriefCardConfig {
   summary_prompt?: string;
   context_notes?: string;
   cache_minutes?: number;
+  /** Optional media_player for HA TTS; otherwise browser speechSynthesis. */
+  tts_entity?: string;
+  /** Play subtle silent audio after tap so Echo Show / Silk stays open. */
+  keep_awake?: boolean;
 }
 
 export interface HassEntity {

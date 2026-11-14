@@ -142,6 +142,15 @@ export class DayBriefCardEditor
     this._update({ title: this._value(ev) || undefined });
   }
 
+  private _onTtsEntity(ev: Event): void {
+    this._update({ tts_entity: this._value(ev) || undefined });
+  }
+
+  private _onKeepAwake(ev: Event): void {
+    const checked = (ev.target as HTMLInputElement).checked;
+    this._update({ keep_awake: checked });
+  }
+
   private _weatherEntities(): string[] {
     if (!this.hass) {
       return [];
@@ -369,6 +378,29 @@ export class DayBriefCardEditor
             .value=${String(this._config.cache_minutes ?? 30)}
             @change=${this._onCache}
           />
+        </label>
+
+        <label>
+          TTS media player (optional)
+          <input
+            type="text"
+            .value=${this._config.tts_entity ?? ""}
+            placeholder="media_player.echo_show"
+            @change=${this._onTtsEntity}
+          />
+          <span class="hint"
+            >Empty = browser speech. Set a media_player for Home Assistant
+            TTS.</span
+          >
+        </label>
+
+        <label class="check">
+          <input
+            type="checkbox"
+            .checked=${this._config.keep_awake !== false}
+            @change=${this._onKeepAwake}
+          />
+          <span>Show Echo keep-awake control</span>
         </label>
       </div>
     `;
