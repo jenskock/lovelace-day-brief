@@ -591,27 +591,11 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
           class="brief ${this._summarySource === "loading" || this._refreshing
             ? "loading"
             : ""}"
-          data-source=${this._summarySource}
         >
           ${this._summarySource === "loading" && !this._summary
             ? "Preparing your day brief…"
             : this._summary}
         </p>
-
-        ${this._summary && this._summarySource !== "loading"
-          ? html`
-              <div class="meta">
-                <span
-                  class="dot ${this._summarySource === "local" ? "local" : ""}"
-                ></span>
-                <span
-                  >${this._summarySource === "ai"
-                    ? "AI brief"
-                    : "Local brief"}</span
-                >
-              </div>
-            `
-          : nothing}
 
         <div class="split">
           <section class="panel">

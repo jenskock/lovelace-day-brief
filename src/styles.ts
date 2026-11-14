@@ -108,30 +108,6 @@ export const cardStyles = css`
     color: var(--primary-text-color);
   }
 
-  .brief[data-source="ai"]::before {
-    content: "";
-  }
-
-  .meta {
-    display: inline-flex;
-    gap: 8px;
-    align-items: center;
-    margin-bottom: 18px;
-    font-size: 0.85rem;
-    color: var(--secondary-text-color);
-  }
-
-  .dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--primary-color, #03a9f4);
-  }
-
-  .dot.local {
-    background: var(--disabled-text-color, #9e9e9e);
-  }
-
   .split {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
