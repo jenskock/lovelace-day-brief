@@ -601,7 +601,7 @@ function _e(t) {
 function v(t) {
   return _e({ ...t, state: !0, attribute: !1 });
 }
-const Ot = "1.6.2", qe = "Day Brief", Je = "day-brief-card", Qe = "day-brief-card-editor", Xe = `
+const Ot = "1.6.3", qe = "Day Brief", Je = "day-brief-card", Qe = "day-brief-card-editor", Xe = `
 Du bist ein Home-Dashboard-Redakteur.
 
 AUFGABE
@@ -1526,13 +1526,8 @@ function vn() {
   if (!(typeof window > "u"))
     try {
       const t = ee ?? new Audio(wn);
-      ee = t, t.currentTime = 0, t.play().then(
-        () => {
-          t.pause(), t.currentTime = 0;
-        },
-        () => {
-        }
-      );
+      ee = t, t.currentTime = 0, t.play().catch(() => {
+      });
     } catch {
     }
 }

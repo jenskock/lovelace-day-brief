@@ -54,18 +54,14 @@ export function unlockAudioForGesture(): void {
     return;
   }
   try {
+    // Keep this element "playing" until speakSummary swaps in the real
+    // TTS URL — pausing here can drop the Safari user-gesture grant.
     const audio = unlockedAudio ?? new Audio(SILENT_WAV);
     unlockedAudio = audio;
     audio.currentTime = 0;
-    void audio.play().then(
-      () => {
-        audio.pause();
-        audio.currentTime = 0;
-      },
-      () => {
-        /* ignore unlock failures; real play will report */
-      },
-    );
+    void audio.play().catch(() => {
+      /* ignore unlock failures; real play will report */
+    });
   } catch {
     /* ignore */
   }
