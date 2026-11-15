@@ -443,6 +443,18 @@ export const cardStyles = css`
     color: var(--secondary-text-color);
   }
 
+  .camera-offline {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 8px;
+    font-size: 0.85rem;
+    text-align: center;
+    color: #fff;
+    background: color-mix(in srgb, #000 60%, transparent);
+  }
+
   .camera-label {
     position: absolute;
     left: 0;
@@ -525,6 +537,13 @@ export const cardStyles = css`
   .mic-status.denied,
   .mic-status.error {
     color: var(--error-color, #db4437);
+  }
+
+  .mic-hint {
+    margin: 8px 0 0;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: var(--secondary-text-color);
   }
 
   .footer-bar {

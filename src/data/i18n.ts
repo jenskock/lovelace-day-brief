@@ -77,7 +77,8 @@ type UiKey =
   | "mic_listening"
   | "mic_denied"
   | "mic_unsupported"
-  | "mic_error";
+  | "mic_error"
+  | "mic_hint";
 
 const UI_DE: Record<UiKey, string> = {
   today: "Heute",
@@ -108,6 +109,7 @@ const UI_DE: Record<UiKey, string> = {
   mic_denied: "Zugriff verweigert — Browser-Berechtigung fehlt",
   mic_unsupported: "Kein Mikrofonzugriff in diesem Browser verfügbar",
   mic_error: "Mikrofonfehler",
+  mic_hint: "Hinweis: Auf dem Echo Show / Silk ist das Browser-Mikrofon blockiert — Sprache läuft dort über Home Assistant Assist (Wyoming-Pipeline).",
 };
 
 const UI_EN: Record<UiKey, string> = {
@@ -139,6 +141,7 @@ const UI_EN: Record<UiKey, string> = {
   mic_denied: "Access denied — browser permission missing",
   mic_unsupported: "No microphone access available in this browser",
   mic_error: "Microphone error",
+  mic_hint: "Note: on Echo Show / Silk the browser mic is blocked — voice goes through Home Assistant Assist (Wyoming pipeline) there.",
 };
 
 export function t(

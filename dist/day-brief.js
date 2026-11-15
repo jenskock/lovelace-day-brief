@@ -45,7 +45,7 @@ const xt = (t) => new Ze(typeof t == "string" ? t : t + "", void 0, ve), Qe = (t
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const { is: At, defineProperty: kt, getOwnPropertyDescriptor: Et, getOwnPropertyNames: Tt, getOwnPropertySymbols: Nt, getPrototypeOf: Ct } = Object, M = globalThis, Le = M.trustedTypes, Dt = Le ? Le.emptyScript : "", ce = M.reactiveElementPolyfillSupport, Y = (t, e) => t, te = { toAttribute(t, e) {
+const { is: kt, defineProperty: At, getOwnPropertyDescriptor: Et, getOwnPropertyNames: Tt, getOwnPropertySymbols: Nt, getPrototypeOf: Ct } = Object, M = globalThis, Le = M.trustedTypes, Dt = Le ? Le.emptyScript : "", ce = M.reactiveElementPolyfillSupport, Y = (t, e) => t, te = { toAttribute(t, e) {
   switch (e) {
     case Boolean:
       t = t ? Dt : null;
@@ -73,7 +73,7 @@ const { is: At, defineProperty: kt, getOwnPropertyDescriptor: Et, getOwnProperty
       }
   }
   return n;
-} }, xe = (t, e) => !At(t, e), Oe = { attribute: !0, type: String, converter: te, reflect: !1, useDefault: !1, hasChanged: xe };
+} }, xe = (t, e) => !kt(t, e), Oe = { attribute: !0, type: String, converter: te, reflect: !1, useDefault: !1, hasChanged: xe };
 Symbol.metadata ?? (Symbol.metadata = Symbol("metadata")), M.litPropertyMetadata ?? (M.litPropertyMetadata = /* @__PURE__ */ new WeakMap());
 let R = class extends HTMLElement {
   static addInitializer(e) {
@@ -85,7 +85,7 @@ let R = class extends HTMLElement {
   static createProperty(e, n = Oe) {
     if (n.state && (n.attribute = !1), this._$Ei(), this.prototype.hasOwnProperty(e) && ((n = Object.create(n)).wrapped = !0), this.elementProperties.set(e, n), !n.noAccessor) {
       const i = Symbol(), s = this.getPropertyDescriptor(e, i, n);
-      s !== void 0 && kt(this.prototype, e, s);
+      s !== void 0 && At(this.prototype, e, s);
     }
   }
   static getPropertyDescriptor(e, n, i) {
@@ -286,7 +286,7 @@ R.elementStyles = [], R.shadowRootOptions = { mode: "open" }, R[Y("elementProper
  */
 const V = globalThis, Me = (t) => t, ne = V.trustedTypes, Ue = ne ? ne.createPolicy("lit-html", { createHTML: (t) => t }) : void 0, Xe = "$lit$", L = `lit$${Math.random().toFixed(9).slice(2)}$`, et = "?" + L, Lt = `<${et}>`, H = document, q = () => H.createComment(""), J = (t) => t === null || typeof t != "object" && typeof t != "function", Se = Array.isArray, Ot = (t) => Se(t) || typeof (t == null ? void 0 : t[Symbol.iterator]) == "function", le = `[ 	
 \f\r]`, G = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, ze = /-->/g, Pe = />/g, U = RegExp(`>|${le}(?:([^\\s"'>=/]+)(${le}*=${le}*(?:[^ 	
-\f\r"'\`<>=]|("|')|))|$)`, "g"), He = /'/g, Re = /"/g, tt = /^(?:script|style|textarea|title)$/i, Mt = (t) => (e, ...n) => ({ _$litType$: t, strings: e, values: n }), m = Mt(1), W = Symbol.for("lit-noChange"), g = Symbol.for("lit-nothing"), Ie = /* @__PURE__ */ new WeakMap(), z = H.createTreeWalker(H, 129);
+\f\r"'\`<>=]|("|')|))|$)`, "g"), He = /'/g, Re = /"/g, tt = /^(?:script|style|textarea|title)$/i, Mt = (t) => (e, ...n) => ({ _$litType$: t, strings: e, values: n }), m = Mt(1), F = Symbol.for("lit-noChange"), g = Symbol.for("lit-nothing"), We = /* @__PURE__ */ new WeakMap(), z = H.createTreeWalker(H, 129);
 function nt(t, e) {
   if (!Se(t) || !t.hasOwnProperty("raw")) throw Error("invalid template strings array");
   return Ue !== void 0 ? Ue.createHTML(e) : e;
@@ -340,12 +340,12 @@ class Z {
     return i.innerHTML = e, i;
   }
 }
-function F(t, e, n = t, i) {
+function I(t, e, n = t, i) {
   var r, o;
-  if (e === W) return e;
+  if (e === F) return e;
   let s = i !== void 0 ? (r = n._$Co) == null ? void 0 : r[i] : n._$Cl;
   const a = J(e) ? void 0 : e._$litDirective$;
-  return (s == null ? void 0 : s.constructor) !== a && ((o = s == null ? void 0 : s._$AO) == null || o.call(s, !1), a === void 0 ? s = void 0 : (s = new a(t), s._$AT(t, n, i)), i !== void 0 ? (n._$Co ?? (n._$Co = []))[i] = s : n._$Cl = s), s !== void 0 && (e = F(t, s._$AS(t, e.values), s, i)), e;
+  return (s == null ? void 0 : s.constructor) !== a && ((o = s == null ? void 0 : s._$AO) == null || o.call(s, !1), a === void 0 ? s = void 0 : (s = new a(t), s._$AT(t, n, i)), i !== void 0 ? (n._$Co ?? (n._$Co = []))[i] = s : n._$Cl = s), s !== void 0 && (e = I(t, s._$AS(t, e.values), s, i)), e;
 }
 class zt {
   constructor(e, n) {
@@ -364,7 +364,7 @@ class zt {
     for (; c !== void 0; ) {
       if (r === c.index) {
         let h;
-        c.type === 2 ? h = new X(a, a.nextSibling, this, e) : c.type === 1 ? h = new c.ctor(a, c.name, c.strings, this, e) : c.type === 6 && (h = new It(a, this, e)), this._$AV.push(h), c = i[++o];
+        c.type === 2 ? h = new X(a, a.nextSibling, this, e) : c.type === 1 ? h = new c.ctor(a, c.name, c.strings, this, e) : c.type === 6 && (h = new Wt(a, this, e)), this._$AV.push(h), c = i[++o];
       }
       r !== (c == null ? void 0 : c.index) && (a = z.nextNode(), r++);
     }
@@ -395,7 +395,7 @@ class X {
     return this._$AB;
   }
   _$AI(e, n = this) {
-    e = F(this, e, n), J(e) ? e === g || e == null || e === "" ? (this._$AH !== g && this._$AR(), this._$AH = g) : e !== this._$AH && e !== W && this._(e) : e._$litType$ !== void 0 ? this.$(e) : e.nodeType !== void 0 ? this.T(e) : Ot(e) ? this.k(e) : this._(e);
+    e = I(this, e, n), J(e) ? e === g || e == null || e === "" ? (this._$AH !== g && this._$AR(), this._$AH = g) : e !== this._$AH && e !== F && this._(e) : e._$litType$ !== void 0 ? this.$(e) : e.nodeType !== void 0 ? this.T(e) : Ot(e) ? this.k(e) : this._(e);
   }
   O(e) {
     return this._$AA.parentNode.insertBefore(e, this._$AB);
@@ -416,8 +416,8 @@ class X {
     }
   }
   _$AC(e) {
-    let n = Ie.get(e.strings);
-    return n === void 0 && Ie.set(e.strings, n = new Z(e)), n;
+    let n = We.get(e.strings);
+    return n === void 0 && We.set(e.strings, n = new Z(e)), n;
   }
   k(e) {
     Se(this._$AH) || (this._$AH = [], this._$AR());
@@ -451,11 +451,11 @@ class oe {
   _$AI(e, n = this, i, s) {
     const a = this.strings;
     let r = !1;
-    if (a === void 0) e = F(this, e, n, 0), r = !J(e) || e !== this._$AH && e !== W, r && (this._$AH = e);
+    if (a === void 0) e = I(this, e, n, 0), r = !J(e) || e !== this._$AH && e !== F, r && (this._$AH = e);
     else {
       const o = e;
       let c, h;
-      for (e = a[0], c = 0; c < a.length - 1; c++) h = F(this, o[i + c], n, c), h === W && (h = this._$AH[c]), r || (r = !J(h) || h !== this._$AH[c]), h === g ? e = g : e !== g && (e += (h ?? "") + a[c + 1]), this._$AH[c] = h;
+      for (e = a[0], c = 0; c < a.length - 1; c++) h = I(this, o[i + c], n, c), h === F && (h = this._$AH[c]), r || (r = !J(h) || h !== this._$AH[c]), h === g ? e = g : e !== g && (e += (h ?? "") + a[c + 1]), this._$AH[c] = h;
     }
     r && !s && this.j(e);
   }
@@ -484,7 +484,7 @@ class Rt extends oe {
     super(e, n, i, s, a), this.type = 5;
   }
   _$AI(e, n = this) {
-    if ((e = F(this, e, n, 0) ?? g) === W) return;
+    if ((e = I(this, e, n, 0) ?? g) === F) return;
     const i = this._$AH, s = e === g && i !== g || e.capture !== i.capture || e.once !== i.once || e.passive !== i.passive, a = e !== g && (i === g || s);
     s && this.element.removeEventListener(this.name, this, i), a && this.element.addEventListener(this.name, this, e), this._$AH = e;
   }
@@ -493,7 +493,7 @@ class Rt extends oe {
     typeof this._$AH == "function" ? this._$AH.call(((n = this.options) == null ? void 0 : n.host) ?? this.element, e) : this._$AH.handleEvent(e);
   }
 }
-class It {
+class Wt {
   constructor(e, n, i) {
     this.element = e, this.type = 6, this._$AN = void 0, this._$AM = n, this.options = i;
   }
@@ -501,12 +501,12 @@ class It {
     return this._$AM._$AU;
   }
   _$AI(e) {
-    F(this, e);
+    I(this, e);
   }
 }
 const he = V.litHtmlPolyfillSupport;
 he == null || he(Z, X), (V.litHtmlVersions ?? (V.litHtmlVersions = [])).push("3.3.3");
-const Wt = (t, e, n) => {
+const Ft = (t, e, n) => {
   const i = (n == null ? void 0 : n.renderBefore) ?? e;
   let s = i._$litPart$;
   if (s === void 0) {
@@ -521,7 +521,7 @@ const Wt = (t, e, n) => {
  * SPDX-License-Identifier: BSD-3-Clause
  */
 const P = globalThis;
-class I extends R {
+class W extends R {
   constructor() {
     super(...arguments), this.renderOptions = { host: this }, this._$Do = void 0;
   }
@@ -532,7 +532,7 @@ class I extends R {
   }
   update(e) {
     const n = this.render();
-    this.hasUpdated || (this.renderOptions.isConnected = this.isConnected), super.update(e), this._$Do = Wt(n, this.renderRoot, this.renderOptions);
+    this.hasUpdated || (this.renderOptions.isConnected = this.isConnected), super.update(e), this._$Do = Ft(n, this.renderRoot, this.renderOptions);
   }
   connectedCallback() {
     var e;
@@ -543,13 +543,13 @@ class I extends R {
     super.disconnectedCallback(), (e = this._$Do) == null || e.setConnected(!1);
   }
   render() {
-    return W;
+    return F;
   }
 }
 var Je;
-I._$litElement$ = !0, I.finalized = !0, (Je = P.litElementHydrateSupport) == null || Je.call(P, { LitElement: I });
+W._$litElement$ = !0, W.finalized = !0, (Je = P.litElementHydrateSupport) == null || Je.call(P, { LitElement: W });
 const ue = P.litElementPolyfillSupport;
-ue == null || ue({ LitElement: I });
+ue == null || ue({ LitElement: W });
 (P.litElementVersions ?? (P.litElementVersions = [])).push("4.2.2");
 /**
  * @license
@@ -566,7 +566,7 @@ const it = (t) => (e, n) => {
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const Ft = { attribute: !0, type: String, converter: te, reflect: !1, hasChanged: xe }, jt = (t = Ft, e, n) => {
+const It = { attribute: !0, type: String, converter: te, reflect: !1, hasChanged: xe }, jt = (t = It, e, n) => {
   const { kind: i, metadata: s } = n;
   let a = globalThis.litPropertyMetadata.get(s);
   if (a === void 0 && globalThis.litPropertyMetadata.set(s, a = /* @__PURE__ */ new Map()), i === "setter" && ((t = Object.create(t)).wrapped = !0), a.set(n.name, t), i === "accessor") {
@@ -587,7 +587,7 @@ const Ft = { attribute: !0, type: String, converter: te, reflect: !1, hasChanged
   }
   throw Error("Unsupported decorator location: " + i);
 };
-function Ae(t) {
+function ke(t) {
   return (e, n) => typeof n == "object" ? jt(t, e, n) : ((i, s, a) => {
     const r = s.hasOwnProperty(a);
     return s.constructor.createProperty(a, i), r ? Object.getOwnPropertyDescriptor(s, a) : void 0;
@@ -599,7 +599,7 @@ function Ae(t) {
  * SPDX-License-Identifier: BSD-3-Clause
  */
 function x(t) {
-  return Ae({ ...t, state: !0, attribute: !1 });
+  return ke({ ...t, state: !0, attribute: !1 });
 }
 const Bt = "1.7.1", st = "Day Brief", rt = "day-brief-card", at = "day-brief-card-editor", ot = `
 Du bist ein Home-Dashboard-Redakteur für eine Familien-Tageskarte.
@@ -652,7 +652,7 @@ VERBOTEN
 STIL
 Warm, ruhig, praktisch. Wie eine kurze feste Morgen-/Abendnotiz an die Familie — nicht wie freies Storytelling.
 `.trim();
-function We(t) {
+function Fe(t) {
   if (!t)
     return null;
   if (typeof t == "string") {
@@ -701,7 +701,7 @@ async function Gt(t, e, n) {
     }
     const h = Kt(t, o);
     for (const d of c.events ?? []) {
-      const u = We(d.start), l = We(d.end);
+      const u = Fe(d.start), l = Fe(d.end);
       !u || !l || r.push({
         summary: d.summary || "Busy",
         description: d.description,
@@ -804,7 +804,7 @@ function Xt(t, e) {
   }
   return { entities: i, missing: s };
 }
-const Fe = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+const Ie = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
 class en {
   constructor() {
     this.active = !1;
@@ -817,7 +817,7 @@ class en {
       return !0;
     try {
       const e = document.createElement("audio");
-      return e.setAttribute("playsinline", "true"), e.loop = !0, e.volume = 0.01, e.src = Fe, e.play(), this.audio = e, this.active = !0, this.timer = window.setInterval(() => {
+      return e.setAttribute("playsinline", "true"), e.loop = !0, e.volume = 0.01, e.src = Ie, e.play(), this.audio = e, this.active = !0, this.timer = window.setInterval(() => {
         this.nudge();
       }, 5e4), !0;
     } catch {
@@ -827,7 +827,7 @@ class en {
   nudge() {
     if (this.audio)
       try {
-        this.audio.src = `${Fe}#${Date.now()}`, this.audio.currentTime = 0, this.audio.play();
+        this.audio.src = `${Ie}#${Date.now()}`, this.audio.currentTime = 0, this.audio.play();
       } catch {
       }
   }
@@ -981,7 +981,8 @@ const on = {
   mic_listening: "Mikrofon aktiv",
   mic_denied: "Zugriff verweigert — Browser-Berechtigung fehlt",
   mic_unsupported: "Kein Mikrofonzugriff in diesem Browser verfügbar",
-  mic_error: "Mikrofonfehler"
+  mic_error: "Mikrofonfehler",
+  mic_hint: "Hinweis: Auf dem Echo Show / Silk ist das Browser-Mikrofon blockiert — Sprache läuft dort über Home Assistant Assist (Wyoming-Pipeline)."
 }, cn = {
   today: "Today",
   weather: "Weather",
@@ -1010,7 +1011,8 @@ const on = {
   mic_listening: "Microphone active",
   mic_denied: "Access denied — browser permission missing",
   mic_unsupported: "No microphone access available in this browser",
-  mic_error: "Microphone error"
+  mic_error: "Microphone error",
+  mic_hint: "Note: on Echo Show / Silk the browser mic is blocked — voice goes through Home Assistant Assist (Wyoming pipeline) there."
 };
 function f(t, e, n) {
   let s = (se(t) ? on : cn)[e];
@@ -1217,11 +1219,11 @@ function xn(t, e, n, i) {
       );
       const y = vn(o, c);
       if (y) {
-        const k = i ? Ke[y.weekday] : y.weekday, T = Ye(y.lessons);
+        const A = i ? Ke[y.weekday] : y.weekday, T = Ye(y.lessons);
         s.push(
-          i ? `Nächster Schultag: ${k} für ${o.name}${T ? ` (bis ${T})` : ""}.` : `Next school day: ${k} for ${o.name}${T ? ` (until ${T})` : ""}.`
+          i ? `Nächster Schultag: ${A} für ${o.name}${T ? ` (bis ${T})` : ""}.` : `Next school day: ${A} for ${o.name}${T ? ` (until ${T})` : ""}.`
         ), s.push(
-          i ? `Plan ${k}:` : `${k} plan:`
+          i ? `Plan ${A}:` : `${A} plan:`
         );
         for (const E of y.lessons.slice(0, 8))
           s.push(`- ${E.start}-${E.end}: ${E.subject}`);
@@ -1260,7 +1262,7 @@ function Sn(t, e) {
     forecast: []
   };
 }
-async function An(t, e, n, i) {
+async function kn(t, e, n, i) {
   const s = await t.connection.subscribeMessage(
     (a) => {
       i(Array.isArray(a.forecast) ? a.forecast : []);
@@ -1295,7 +1297,7 @@ const ht = /* @__PURE__ */ new Set([
   "lightning-rainy",
   "hail"
 ]), Q = /* @__PURE__ */ new Map();
-function kn(t) {
+function An(t) {
   let e = 0;
   for (let n = 0; n < t.length; n += 1)
     e = (e << 5) - e + t.charCodeAt(n), e |= 0;
@@ -1527,7 +1529,7 @@ function Rn(t, e, n, i) {
   const a = s.map((r) => mt(r, e, n)).join(", ");
   return i ? `Regen/Schnee erwartet: ${a}` : `Rain/snow expected: ${a}`;
 }
-function In(t) {
+function Wn(t) {
   var B;
   const {
     german: e,
@@ -1544,7 +1546,7 @@ function In(t) {
     events: l,
     people: _,
     solar: y,
-    trash: k,
+    trash: A,
     alerts: T,
     windows: E,
     heating: N,
@@ -1562,7 +1564,7 @@ function In(t) {
     if (l.length === 0)
       $.push("Heute stehen keine Termine an.");
     else {
-      const p = l.slice(0, 3).map((A) => A.summary).filter(Boolean).join(", ");
+      const p = l.slice(0, 3).map((k) => k.summary).filter(Boolean).join(", ");
       $.push(
         l.length === 1 ? `Termin: ${p}.` : `${l.length} Termine, u.a. ${p}.`
       );
@@ -1571,9 +1573,9 @@ function In(t) {
       `Solar: ${y.slice(0, 3).map((p) => `${p.name} ${p.state}`).join(", ")}.`
     );
     {
-      const A = $e(k, s, a, !0).filter((C) => C.startsWith("AKTION"));
-      A.length && $.push(
-        A.map((C) => C.replace(/^AKTION (HEUTE(?: ABEND)?: )/, "")).join(" ")
+      const k = $e(A, s, a, !0).filter((C) => C.startsWith("AKTION"));
+      k.length && $.push(
+        k.map((C) => C.replace(/^AKTION (HEUTE(?: ABEND)?: )/, "")).join(" ")
       );
     }
     if (E.length && $.push(
@@ -1583,9 +1585,9 @@ function In(t) {
     ), b.length && $.push(
       `Geräte: ${b.map((p) => `${p.name} ${p.state}`).join(", ")}.`
     ), T.length) {
-      const p = T.filter((A) => A.state !== "0" && A.state !== "ok");
+      const p = T.filter((k) => k.state !== "0" && k.state !== "ok");
       p.length && $.push(
-        `Hinweis: ${p.map((A) => `${A.name} ${A.state}`).join(", ")}.`
+        `Hinweis: ${p.map((k) => `${k.name} ${k.state}`).join(", ")}.`
       );
     }
     _.length && $.push(
@@ -1606,9 +1608,9 @@ function In(t) {
       `Solar: ${y.slice(0, 3).map((p) => `${p.name} ${p.state}`).join(", ")}.`
     );
     {
-      const A = $e(k, s, a, !1).filter((C) => C.startsWith("ACTION"));
-      A.length && $.push(
-        A.map(
+      const k = $e(A, s, a, !1).filter((C) => C.startsWith("ACTION"));
+      k.length && $.push(
+        k.map(
           (C) => C.replace(/^ACTION (TODAY|TONIGHT): /, "")
         ).join(" ")
       );
@@ -1621,7 +1623,7 @@ function In(t) {
   }
   return $.join(" ");
 }
-function Wn(t) {
+function Fn(t) {
   const {
     weather: e,
     forecast: n = (e == null ? void 0 : e.forecast) ?? [],
@@ -1634,7 +1636,7 @@ function Wn(t) {
     timeZone: h,
     summaryPrompt: d,
     contextNotes: u
-  } = t, l = En(c), _ = Tn(o, h), y = Nn(_, l), k = new Intl.DateTimeFormat(c, {
+  } = t, l = En(c), _ = Tn(o, h), y = Nn(_, l), A = new Intl.DateTimeFormat(c, {
     weekday: "long",
     month: "long",
     day: "numeric",
@@ -1652,7 +1654,7 @@ function Wn(t) {
     c,
     h,
     l
-  ), B = Rn(n, c, h, l), p = dn(a, o, h, 14), A = Yt(i, o, h), C = [
+  ), B = Rn(n, c, h, l), p = dn(a, o, h, 14), k = Yt(i, o, h), C = [
     ...p.map((K) => pn(K, l)),
     ...Un(i, l)
   ], gt = Mn(o, h, u, _), { lines: _t, hasLessonsToday: yt } = xn(
@@ -1660,11 +1662,11 @@ function Wn(t) {
     o,
     h,
     l
-  ), Ee = gt || yt, $t = A.length === 0 ? [] : A.slice(0, 12).map((K) => pt(K, l)), wt = (d == null ? void 0 : d.trim()) || ot, Te = u == null ? void 0 : u.trim(), bt = [
+  ), Ee = gt || yt, $t = k.length === 0 ? [] : k.slice(0, 12).map((K) => pt(K, l)), wt = (d == null ? void 0 : d.trim()) || ot, Te = u == null ? void 0 : u.trim(), bt = [
     S(
       l ? "ZEIT" : "TIME",
       [
-        l ? `Datum: ${k}` : `Date: ${k}`,
+        l ? `Datum: ${A}` : `Date: ${A}`,
         l ? `Uhrzeit: ${T}` : `Time: ${T}`,
         l ? `Tageszeit: ${y}` : `Time of day: ${y}`
       ],
@@ -1774,9 +1776,9 @@ function Wn(t) {
     "",
     l ? "ANTWORT: Nur der fertige deutsche Fließtext (Markdown **fett** erlaubt), nichts sonst." : "RESPONSE: Only the finished brief text (Markdown **bold** allowed), nothing else."
   ].join(`
-`), vt = In({
+`), vt = Wn({
     german: l,
-    dayLabel: k,
+    dayLabel: A,
     part: _,
     now: o,
     timeZone: h,
@@ -1786,7 +1788,7 @@ function Wn(t) {
     rainLine: B,
     schoolDay: Ee,
     birthdays: p,
-    events: A,
+    events: k,
     people: b.people,
     solar: b.solar,
     trash: b.trash,
@@ -1796,7 +1798,7 @@ function Wn(t) {
     appliances: b.appliances
   });
   return {
-    hash: kn(Ne),
+    hash: An(Ne),
     prompt: Ne,
     local: vt
   };
@@ -1808,7 +1810,7 @@ function ft(t) {
   }
   Q.delete(t);
 }
-function Fn(t, e) {
+function In(t, e) {
   const n = Q.get(t);
   return n ? n.hash !== e || n.expiresAt < Date.now() ? (Q.delete(t), null) : n : null;
 }
@@ -1835,7 +1837,7 @@ async function Bn(t) {
   if (o)
     ft(a);
   else {
-    const c = Fn(a, s.hash);
+    const c = In(a, s.hash);
     if (c)
       return { text: c.text, source: c.source };
   }
@@ -2412,6 +2414,18 @@ const qn = Qe`
     color: var(--secondary-text-color);
   }
 
+  .camera-offline {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 8px;
+    font-size: 0.85rem;
+    text-align: center;
+    color: #fff;
+    background: color-mix(in srgb, #000 60%, transparent);
+  }
+
   .camera-label {
     position: absolute;
     left: 0;
@@ -2496,6 +2510,13 @@ const qn = Qe`
     color: var(--error-color, #db4437);
   }
 
+  .mic-hint {
+    margin: 8px 0 0;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: var(--secondary-text-color);
+  }
+
   .footer-bar {
     display: flex;
     align-items: center;
@@ -2573,9 +2594,9 @@ var Jn = Object.defineProperty, Zn = Object.getOwnPropertyDescriptor, v = (t, e,
   return i && s && Jn(e, n, s), s;
 };
 const fe = "daily", ge = 24, qe = 15, _e = "auto", Qn = 15 * 6e4;
-let w = class extends I {
+let w = class extends W {
   constructor() {
-    super(...arguments), this._weather = null, this._forecast = [], this._events = [], this._entities = [], this._summary = "", this._summarySource = "loading", this._errors = [], this._loadingEvents = !1, this._refreshing = !1, this._contextOpen = !1, this._now = /* @__PURE__ */ new Date(), this._speaking = !1, this._keepAwakeOn = !1, this._cameraMode = {}, this._cameraTick = 0, this._micStatus = "idle", this._micDevice = "", this._micLevel = 0, this._fetchGeneration = 0, this._keepAwake = new en(), this._mic = new tn(), this._lastMicLevelAt = 0, this._onVisibility = () => {
+    super(...arguments), this._weather = null, this._forecast = [], this._events = [], this._entities = [], this._summary = "", this._summarySource = "loading", this._errors = [], this._loadingEvents = !1, this._refreshing = !1, this._contextOpen = !1, this._now = /* @__PURE__ */ new Date(), this._speaking = !1, this._keepAwakeOn = !1, this._cameraMode = {}, this._cameraOffline = {}, this._cameraTick = 0, this._micStatus = "idle", this._micDevice = "", this._micLevel = 0, this._fetchGeneration = 0, this._keepAwake = new en(), this._mic = new tn(), this._lastMicLevelAt = 0, this._onVisibility = () => {
       document.visibilityState === "visible" ? (this._now = /* @__PURE__ */ new Date(), this._startClock(), this._refreshData(!1)) : this._stopClock();
     };
   }
@@ -2622,7 +2643,7 @@ let w = class extends I {
   }
   shouldUpdate(t) {
     var e, n, i, s, a, r, o, c, h, d, u, l;
-    if (t.has("_config") || t.has("_weather") || t.has("_forecast") || t.has("_entities") || t.has("_events") || t.has("_summary") || t.has("_summarySource") || t.has("_errors") || t.has("_loadingEvents") || t.has("_refreshing") || t.has("_contextOpen") || t.has("_now") || t.has("_speaking") || t.has("_keepAwakeOn") || t.has("_cameraMode") || t.has("_cameraTick") || t.has("_micStatus") || t.has("_micDevice") || t.has("_micLevel"))
+    if (t.has("_config") || t.has("_weather") || t.has("_forecast") || t.has("_entities") || t.has("_events") || t.has("_summary") || t.has("_summarySource") || t.has("_errors") || t.has("_loadingEvents") || t.has("_refreshing") || t.has("_contextOpen") || t.has("_now") || t.has("_speaking") || t.has("_keepAwakeOn") || t.has("_cameraMode") || t.has("_cameraOffline") || t.has("_cameraTick") || t.has("_micStatus") || t.has("_micDevice") || t.has("_micLevel"))
       return !0;
     if (t.has("hass")) {
       const _ = t.get("hass");
@@ -2685,8 +2706,10 @@ let w = class extends I {
     return e ? `/api/camera_proxy/${t}?token=${encodeURIComponent(e)}&t=${this._cameraTick}` : null;
   }
   _onCameraError(t) {
-    const n = (this._cameraMode[t] ?? "stream") === "stream" ? "still" : "error";
-    this._cameraMode = { ...this._cameraMode, [t]: n };
+    (this._cameraMode[t] ?? "stream") === "stream" ? this._cameraMode = { ...this._cameraMode, [t]: "still" } : this._cameraOffline = { ...this._cameraOffline, [t]: !0 };
+  }
+  _onCameraLoad(t) {
+    this._cameraOffline[t] && (this._cameraOffline = { ...this._cameraOffline, [t]: !1 });
   }
   _startCameraStillLoop() {
     this._stopCameraStillLoop(), this._cameraStillTimer = window.setInterval(() => {
@@ -2783,7 +2806,7 @@ let w = class extends I {
         return;
       }
       try {
-        this._unsubForecast = await An(
+        this._unsubForecast = await kn(
           this.hass,
           t,
           e,
@@ -2873,7 +2896,7 @@ let w = class extends I {
     var c;
     if (!this.hass || !this._config)
       return;
-    const n = this._config.summary_mode ?? _e, i = this._config.cache_minutes ?? qe, s = ((c = this.hass.locale) == null ? void 0 : c.language) ?? "en", a = this.hass.config.time_zone, r = Wn({
+    const n = this._config.summary_mode ?? _e, i = this._config.cache_minutes ?? qe, s = ((c = this.hass.locale) == null ? void 0 : c.language) ?? "en", a = this.hass.config.time_zone, r = Fn({
       weather: this._weather,
       forecast: this._forecast,
       events: this._events,
@@ -3085,26 +3108,30 @@ let w = class extends I {
                 <h3 class="section-title">${f(t, "cameras")}</h3>
                 <div class="camera-grid">
                   ${(this._config.cameras ?? []).map((r) => {
-      var d;
-      const o = this._cameraMode[r] ?? "stream", c = (d = this.hass) == null ? void 0 : d.states[r], h = o === "still" ? this._cameraStillSrc(r) : this._cameraStreamSrc(r);
+      var u;
+      const o = this._cameraMode[r] ?? "stream", c = this._cameraOffline[r] === !0, h = (u = this.hass) == null ? void 0 : u.states[r], d = o === "still" ? this._cameraStillSrc(r) : this._cameraStreamSrc(r);
       return m`
                       <button
                         class="camera-tile"
                         type="button"
                         @click=${() => this._openMoreInfo(r)}
                       >
-                        ${o !== "error" && h ? m`
+                        ${d ? m`
                               <img
                                 class="camera-feed"
-                                src=${h}
+                                src=${d}
                                 alt=${this._cameraName(r)}
                                 @error=${() => this._onCameraError(r)}
+                                @load=${() => this._onCameraLoad(r)}
                               />
+                              ${c ? m`<div class="camera-offline">
+                                    ${f(t, "no_feed")}${h != null && h.state ? ` · ${h.state}` : ""}
+                                  </div>` : g}
                               <span class="camera-badge"
                                 >${o === "still" ? f(t, "camera_snapshot") : f(t, "camera_live")}</span
                               >
                             ` : m`<div class="camera-missing">
-                              ${f(t, "no_feed")}${c != null && c.state ? ` · ${c.state}` : ""}
+                              ${f(t, "no_feed")}${h != null && h.state ? ` · ${h.state}` : ""}
                             </div>`}
                         <span class="camera-label"
                           >${this._cameraName(r)}</span
@@ -3137,6 +3164,7 @@ let w = class extends I {
                 ${this._micStatus !== "idle" ? m`<p class="mic-status ${this._micStatus}">
                       ${this._micStatusText(t)}
                     </p>` : g}
+                <p class="mic-hint">${f(t, "mic_hint")}</p>
               </section>
             ` : g}
 
@@ -3203,7 +3231,7 @@ let w = class extends I {
 };
 w.styles = qn;
 v([
-  Ae({ attribute: !1 })
+  ke({ attribute: !1 })
 ], w.prototype, "hass", 2);
 v([
   x()
@@ -3252,6 +3280,9 @@ v([
 ], w.prototype, "_cameraMode", 2);
 v([
   x()
+], w.prototype, "_cameraOffline", 2);
+v([
+  x()
 ], w.prototype, "_cameraTick", 2);
 v([
   x()
@@ -3278,7 +3309,7 @@ console.info(
   "color:#fff;background:#03a9f4;font-weight:700",
   "color:#03a9f4;background:transparent;font-weight:700"
 );
-var Xn = Object.defineProperty, ei = Object.getOwnPropertyDescriptor, ke = (t, e, n, i) => {
+var Xn = Object.defineProperty, ei = Object.getOwnPropertyDescriptor, Ae = (t, e, n, i) => {
   for (var s = i > 1 ? void 0 : i ? ei(e, n) : e, a = t.length - 1, r; a >= 0; a--)
     (r = t[a]) && (s = (i ? r(e, n, s) : r(s)) || s);
   return i && s && Xn(e, n, s), s;
@@ -3305,7 +3336,7 @@ function ye(t) {
     )
   ];
 }
-let j = class extends I {
+let j = class extends W {
   setConfig(t) {
     this._config = {
       ...t,
@@ -3708,13 +3739,13 @@ j.styles = Qe`
       width: auto;
     }
   `;
-ke([
-  Ae({ attribute: !1 })
+Ae([
+  ke({ attribute: !1 })
 ], j.prototype, "hass", 2);
-ke([
+Ae([
   x()
 ], j.prototype, "_config", 2);
-j = ke([
+j = Ae([
   it(at)
 ], j);
 const si = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({

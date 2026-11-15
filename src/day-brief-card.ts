@@ -69,8 +69,8 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
   @state() private _now = new Date();
   @state() private _speaking = false;
   @state() private _keepAwakeOn = false;
-  @state() private _cameraMode: Record<string, "stream" | "still" | "error"> =
-    {};
+  @state() private _cameraMode: Record<string, "stream" | "still"> = {};
+  @state() private _cameraOffline: Record<string, boolean> = {};
   @state() private _cameraTick = 0;
   @state() private _micStatus: MicTestStatus = "idle";
   @state() private _micDevice = "";
@@ -185,6 +185,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       changed.has("_speaking") ||
       changed.has("_keepAwakeOn") ||
       changed.has("_cameraMode") ||
+      changed.has("_cameraOffline") ||
       changed.has("_cameraTick") ||
       changed.has("_micStatus") ||
       changed.has("_micDevice") ||
@@ -307,9 +308,20 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
 
   private _onCameraError(entityId: string): void {
     const mode = this._cameraMode[entityId] ?? "stream";
-    // Stream unsupported -> fall back to refreshed still snapshots.
-    const next = mode === "stream" ? "still" : "error";
-    this._cameraMode = { ...this._cameraMode, [entityId]: next };
+    if (mode === "stream") {
+      // Stream unsupported -> fall back to refreshed still snapshots.
+      this._cameraMode = { ...this._cameraMode, [entityId]: "still" };
+    } else {
+      // Still failing (camera offline) -> flag overlay, but keep retrying
+      // via the tick so the tile recovers when the camera comes back.
+      this._cameraOffline = { ...this._cameraOffline, [entityId]: true };
+    }
+  }
+
+  private _onCameraLoad(entityId: string): void {
+    if (this._cameraOffline[entityId]) {
+      this._cameraOffline = { ...this._cameraOffline, [entityId]: false };
+    }
   }
 
   private _startCameraStillLoop(): void {
@@ -866,6 +878,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
                 <div class="camera-grid">
                   ${(this._config.cameras ?? []).map((entityId) => {
                     const mode = this._cameraMode[entityId] ?? "stream";
+                    const offline = this._cameraOffline[entityId] === true;
                     const state = this.hass?.states[entityId];
                     const src =
                       mode === "still"
@@ -877,14 +890,22 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
                         type="button"
                         @click=${() => this._openMoreInfo(entityId)}
                       >
-                        ${mode !== "error" && src
+                        ${src
                           ? html`
                               <img
                                 class="camera-feed"
                                 src=${src}
                                 alt=${this._cameraName(entityId)}
                                 @error=${() => this._onCameraError(entityId)}
+                                @load=${() => this._onCameraLoad(entityId)}
                               />
+                              ${offline
+                                ? html`<div class="camera-offline">
+                                    ${t(locale, "no_feed")}${state?.state
+                                      ? ` · ${state.state}`
+                                      : ""}
+                                  </div>`
+                                : nothing}
                               <span class="camera-badge"
                                 >${mode === "still"
                                   ? t(locale, "camera_snapshot")
@@ -933,6 +954,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
                       ${this._micStatusText(locale)}
                     </p>`
                   : nothing}
+                <p class="mic-hint">${t(locale, "mic_hint")}</p>
               </section>
             `
           : nothing}
