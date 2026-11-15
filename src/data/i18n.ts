@@ -68,7 +68,16 @@ type UiKey =
   | "keep_awake"
   | "keep_awake_on"
   | "weather_missing"
-  | "entity_missing";
+  | "entity_missing"
+  | "camera_live"
+  | "camera_snapshot"
+  | "mic_test"
+  | "mic_start"
+  | "mic_stop"
+  | "mic_listening"
+  | "mic_denied"
+  | "mic_unsupported"
+  | "mic_error";
 
 const UI_DE: Record<UiKey, string> = {
   today: "Heute",
@@ -90,6 +99,15 @@ const UI_DE: Record<UiKey, string> = {
   keep_awake_on: "Wachhalten an",
   weather_missing: "Wetter-Entity nicht gefunden: {id}",
   entity_missing: "Entity nicht gefunden: {id}",
+  camera_live: "Live",
+  camera_snapshot: "Snapshot",
+  mic_test: "Mikrofon-Test",
+  mic_start: "Mikrofon testen",
+  mic_stop: "Stoppen",
+  mic_listening: "Mikrofon aktiv",
+  mic_denied: "Zugriff verweigert — Browser-Berechtigung fehlt",
+  mic_unsupported: "Kein Mikrofonzugriff in diesem Browser verfügbar",
+  mic_error: "Mikrofonfehler",
 };
 
 const UI_EN: Record<UiKey, string> = {
@@ -112,6 +130,15 @@ const UI_EN: Record<UiKey, string> = {
   keep_awake_on: "Keep awake on",
   weather_missing: "Weather entity not found: {id}",
   entity_missing: "Entity not found: {id}",
+  camera_live: "Live",
+  camera_snapshot: "Snapshot",
+  mic_test: "Microphone test",
+  mic_start: "Test microphone",
+  mic_stop: "Stop",
+  mic_listening: "Microphone active",
+  mic_denied: "Access denied — browser permission missing",
+  mic_unsupported: "No microphone access available in this browser",
+  mic_error: "Microphone error",
 };
 
 export function t(

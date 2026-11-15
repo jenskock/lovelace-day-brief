@@ -47,6 +47,8 @@ export interface DayBriefCardConfig {
   tts_media_player?: string;
   /** Play subtle silent audio after tap so Echo Show / Silk stays open. */
   keep_awake?: boolean;
+  /** Show a microphone test panel (tap-to-test getUserMedia + level meter). */
+  mic_test?: boolean;
 }
 
 export interface HassEntity {

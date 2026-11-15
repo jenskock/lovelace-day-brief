@@ -459,6 +459,74 @@ export const cardStyles = css`
     );
   }
 
+  .camera-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 650;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #fff;
+    background: color-mix(in srgb, #000 55%, transparent);
+  }
+
+  .mic-panel {
+    margin-top: 16px;
+  }
+
+  .mic-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mic-btn {
+    flex: 0 0 auto;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--primary-color, #03a9f4) 18%, transparent);
+    color: var(--primary-text-color);
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .mic-btn:hover {
+    background: color-mix(in srgb, var(--primary-color, #03a9f4) 28%, transparent);
+  }
+
+  .mic-level {
+    flex: 1 1 auto;
+    height: 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--primary-text-color) 8%, transparent);
+    overflow: hidden;
+  }
+
+  .mic-level-fill {
+    height: 100%;
+    width: 0;
+    border-radius: 999px;
+    background: var(--primary-color, #03a9f4);
+    transition: width 90ms linear;
+  }
+
+  .mic-status {
+    margin: 8px 0 0;
+    font-size: 0.85rem;
+    color: var(--secondary-text-color);
+  }
+
+  .mic-status.denied,
+  .mic-status.error {
+    color: var(--error-color, #db4437);
+  }
+
   .footer-bar {
     display: flex;
     align-items: center;

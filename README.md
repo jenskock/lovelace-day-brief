@@ -59,7 +59,8 @@ agent_id: conversation.your_llm_agent
 | `weather_entity` | string | — | Weather entity for current conditions |
 | `calendars` | string[] | `[]` | Calendar entities for today’s agenda |
 | `entities` | string[] | `[]` | Extra HA entities (people, solar, trash, windows, oil, vacuum/mower, …) |
-| `cameras` | string[] | `[]` | Camera entities shown as live feeds at the bottom |
+| `cameras` | string[] | `[]` | Camera entities shown as feeds at the bottom — MJPEG stream when available, automatic fallback to refreshed still snapshots (badge shows Live/Snapshot) |
+| `mic_test` | boolean | `false` | Microphone test panel: tap to request mic access (`getUserMedia`) with a live level meter — shows whether the dashboard browser (e.g. Echo Show Silk) allows mic input |
 | `birthdays` | `{name,date}[]` | `[]` | Birthdays as `YYYY-MM-DD`; surfaced if within 14 days |
 | `schedules` | object[] | `[]` | School/work timetables; today’s lessons go into the prompt |
 | `context_notes` | string | — | Free-text household context for the prompt |
@@ -76,6 +77,12 @@ agent_id: conversation.your_llm_agent
 
 Tap **↻** to refresh, **♪** to read the brief aloud.  
 **Keep awake** (footer): tap once after opening on Echo Show — plays near-silent audio so Silk stays open (no green/red banner). Auto-refresh every **15 minutes**.
+
+### Camera & microphone on the Echo Show
+
+- Add any HA `camera.*` entity under `cameras:` — the card tries `/api/camera_proxy_stream/` (MJPEG live) first and falls back to `/api/camera_proxy/` snapshots refreshed every 5 s when the camera has no stream.
+- Note: the stock Alexa integration does **not** expose the Echo Show's built-in camera as a `camera.*` entity. You need something that creates one — e.g. the [techo5](https://github.com/BretthomerepoProjects/techo5) open firmware exposes `/camera.mjpeg` + `/camera.jpg` on the device, which you add as a Generic/MJPEG camera in HA.
+- `mic_test: true` adds a tap-to-test microphone panel. On Echo Show / Silk this typically reports *denied* or *unsupported* — that is the expected result of the access test; voice input then has to go through HA Assist/Wyoming instead of the browser.
 
 ## How it works
 

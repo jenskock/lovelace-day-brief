@@ -155,6 +155,11 @@ export class DayBriefCardEditor
     this._update({ keep_awake: checked });
   }
 
+  private _onMicTest(ev: Event): void {
+    const checked = (ev.target as HTMLInputElement).checked;
+    this._update({ mic_test: checked });
+  }
+
   private _weatherEntities(): string[] {
     if (!this.hass) {
       return [];
@@ -276,7 +281,8 @@ export class DayBriefCardEditor
             @change=${this._onCameras}
           ></textarea>
           <span class="hint"
-            >Live feeds at the bottom (2×2 / 4 across on wide screens).</span
+            >Live feeds at the bottom (2×2 / 4 across on wide screens). Falls back
+            to refreshed snapshots when a camera has no stream.</span
           >
         </label>
 
@@ -415,6 +421,15 @@ export class DayBriefCardEditor
             @change=${this._onKeepAwake}
           />
           <span>Show Echo keep-awake control</span>
+        </label>
+
+        <label class="check">
+          <input
+            type="checkbox"
+            .checked=${this._config.mic_test === true}
+            @change=${this._onMicTest}
+          />
+          <span>Show microphone test panel</span>
         </label>
       </div>
     `;
