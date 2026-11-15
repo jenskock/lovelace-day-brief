@@ -1,7 +1,11 @@
 import { LitElement, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { CARD_NAME, CARD_TYPE, CARD_VERSION, EDITOR_NAME } from "./const";
-import { fetchCalendarEvents, formatEventTime } from "./data/calendar";
+import {
+  fetchCalendarEvents,
+  formatEventTime,
+  groupEventsByDay,
+} from "./data/calendar";
 import {
   readEntitySnapshots,
   type EntitySnapshot,
@@ -693,26 +697,42 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
                   </p>`
                 : html`
                     <ul class="events">
-                      ${this._events.map(
-                        (event) => html`
-                          <li class="event">
-                            <span class="event-time"
-                              >${formatEventTime(
-                                event,
-                                locale,
-                                timeZone,
-                              )}</span
-                            >
-                            <div class="event-body">
-                              <p class="event-title">${event.summary}</p>
-                              ${event.calendar_name
-                                ? html`<p class="event-cal">
-                                    ${event.calendar_name}${event.location
-                                      ? ` · ${event.location}`
-                                      : ""}
-                                  </p>`
-                                : nothing}
-                            </div>
+                      ${groupEventsByDay(
+                        this._events,
+                        locale,
+                        timeZone,
+                        new Date(),
+                      ).map(
+                        (group) => html`
+                          <li class="event-day" aria-label=${group.label}>
+                            <p class="event-day-label">${group.label}</p>
+                            <ul class="event-day-list">
+                              ${group.events.map(
+                                (event) => html`
+                                  <li class="event">
+                                    <span class="event-time"
+                                      >${formatEventTime(
+                                        event,
+                                        locale,
+                                        timeZone,
+                                      )}</span
+                                    >
+                                    <div class="event-body">
+                                      <p class="event-title">
+                                        ${event.summary}
+                                      </p>
+                                      ${event.calendar_name
+                                        ? html`<p class="event-cal">
+                                            ${event.calendar_name}${event.location
+                                              ? ` · ${event.location}`
+                                              : ""}
+                                          </p>`
+                                        : nothing}
+                                    </div>
+                                  </li>
+                                `,
+                              )}
+                            </ul>
                           </li>
                         `,
                       )}

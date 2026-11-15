@@ -1,4 +1,5 @@
 import { DEFAULT_SUMMARY_PROMPT } from "../const";
+import { filterTodaysEvents } from "./calendar";
 import type {
   BirthdayConfig,
   CalendarEvent,
@@ -835,6 +836,8 @@ export function buildSummaryDigest(options: {
   );
   const rainLine = rainOutlook(forecast, locale, timeZone, german);
   const upcoming = upcomingBirthdays(birthdays, now, timeZone, 14);
+  // Agenda for the LLM is calendar-day "today" only — not the full horizon.
+  const todayEvents = filterTodaysEvents(events, now, timeZone);
   const birthdayLines = [
     ...upcoming.map((entry) => formatBirthdayLine(entry, german)),
     ...calendarBirthdayHints(events, german),
@@ -849,9 +852,9 @@ export function buildSummaryDigest(options: {
   const isSchoolToday = schoolDay || hasLessonsToday;
 
   const agendaLines =
-    events.length === 0
+    todayEvents.length === 0
       ? []
-      : events.slice(0, 12).map((event) => eventLine(event, german));
+      : todayEvents.slice(0, 12).map((event) => eventLine(event, german));
 
   const instructions = summaryPrompt?.trim() || DEFAULT_SUMMARY_PROMPT;
   const household = contextNotes?.trim();
@@ -924,7 +927,9 @@ export function buildSummaryDigest(options: {
     section(
       german ? "TERMINE" : "AGENDA",
       agendaLines,
-      german ? "Keine Termine." : "No meetings.",
+      german
+        ? "Keine Termine heute (nur heutiger Kalendertag, nicht die nächsten 24h)."
+        : "No events today (calendar day only, not the next 24h).",
     ),
     section(
       german ? "PERSONEN" : "PEOPLE",
@@ -1007,7 +1012,7 @@ export function buildSummaryDigest(options: {
     rainLine,
     schoolDay: isSchoolToday,
     birthdays: upcoming,
-    events,
+    events: todayEvents,
     people: buckets.people,
     solar: buckets.solar,
     trash: buckets.trash,

@@ -251,8 +251,40 @@ export const cardStyles = css`
     list-style: none;
     margin: 0;
     padding: 0;
-    max-height: 280px;
+    max-height: 320px;
     overflow: auto;
+  }
+
+  .event-day {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .event-day + .event-day {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid
+      color-mix(in srgb, var(--primary-text-color) 8%, transparent);
+  }
+
+  .event-day-label {
+    margin: 0 0 6px;
+    font-size: 0.78rem;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: color-mix(
+      in srgb,
+      var(--primary-text-color) 30%,
+      var(--secondary-text-color)
+    );
+  }
+
+  .event-day-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
   }
 
   .event {
@@ -260,12 +292,12 @@ export const cardStyles = css`
     grid-template-columns: 78px minmax(0, 1fr);
     gap: 10px;
     align-items: start;
-    padding: 10px 0;
+    padding: 8px 0;
     border-top: 1px solid
       color-mix(in srgb, var(--primary-text-color) 4%, transparent);
   }
 
-  .event:first-child {
+  .event-day-list .event:first-child {
     padding-top: 0;
     border-top: none;
   }

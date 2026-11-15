@@ -1,4 +1,4 @@
-export const CARD_VERSION = "1.6.7";
+export const CARD_VERSION = "1.6.8";
 export const CARD_NAME = "Day Brief";
 export const CARD_TYPE = "day-brief-card";
 export const EDITOR_NAME = "day-brief-card-editor";
@@ -34,7 +34,7 @@ MARKDOWN
 - Keine Links, keine Listen, keine Überschriften, kein anderer Markdown.
 
 SONST NUR WENN DATEN DA SIND (kurz einbauen, Struktur nicht sprengen)
-- Heutige Termine aus [TERMINE] (nicht Schule einer falschen Person zuordnen)
+- Nur heutige Termine aus [TERMINE] (Kalendertag heute; nicht Schule einer falschen Person zuordnen)
 - Geburtstage in den nächsten 14 Tagen aus [GEBURTSTAGE] (Alter nennen wenn bekannt)
 - Morgens an echten Schultagen: kurz [STUNDENPLAN] (jetzt / als Nächstes) für die genannte Schülerin
 - Offene Fenster bei Kälte

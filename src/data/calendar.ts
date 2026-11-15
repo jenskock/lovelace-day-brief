@@ -113,13 +113,102 @@ export async function fetchCalendarEvents(
   return { events, errors };
 }
 
+/** Local calendar day key YYYY-MM-DD in the given time zone. */
+export function localDayKey(now: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+/** Day key for grouping/filtering an event (all-day uses the date part). */
+export function eventDayKey(event: CalendarEvent, timeZone: string): string {
+  if (event.all_day) {
+    const match = /^(\d{4}-\d{2}-\d{2})/.exec(event.start);
+    if (match) {
+      return match[1];
+    }
+  }
+  const start = new Date(event.start);
+  if (Number.isNaN(start.getTime())) {
+    return event.start.slice(0, 10);
+  }
+  return localDayKey(start, timeZone);
+}
+
+export function filterTodaysEvents(
+  events: CalendarEvent[],
+  now: Date,
+  timeZone: string,
+): CalendarEvent[] {
+  const today = localDayKey(now, timeZone);
+  return events.filter((event) => eventDayKey(event, timeZone) === today);
+}
+
+export function formatEventDayLabel(
+  dayKey: string,
+  locale: string,
+  timeZone: string,
+  now: Date,
+): string {
+  const today = localDayKey(now, timeZone);
+  const tomorrowDate = new Date(now.getTime() + 36 * 60 * 60 * 1000);
+  const tomorrow = localDayKey(tomorrowDate, timeZone);
+
+  if (dayKey === today) {
+    return locale.toLowerCase().startsWith("de") ? "Heute" : "Today";
+  }
+  if (dayKey === tomorrow) {
+    return locale.toLowerCase().startsWith("de") ? "Morgen" : "Tomorrow";
+  }
+
+  const date = new Date(`${dayKey}T12:00:00`);
+  if (Number.isNaN(date.getTime())) {
+    return dayKey;
+  }
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "long",
+    day: "numeric",
+    month: "short",
+    timeZone,
+  }).format(date);
+}
+
+export function groupEventsByDay(
+  events: CalendarEvent[],
+  locale: string,
+  timeZone: string,
+  now: Date,
+): Array<{ key: string; label: string; events: CalendarEvent[] }> {
+  const groups = new Map<string, CalendarEvent[]>();
+  for (const event of events) {
+    const key = eventDayKey(event, timeZone);
+    const bucket = groups.get(key);
+    if (bucket) {
+      bucket.push(event);
+    } else {
+      groups.set(key, [event]);
+    }
+  }
+
+  return [...groups.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, dayEvents]) => ({
+      key,
+      label: formatEventDayLabel(key, locale, timeZone, now),
+      events: dayEvents,
+    }));
+}
+
 export function formatEventTime(
   event: CalendarEvent,
   locale: string,
   timeZone: string,
 ): string {
   if (event.all_day) {
-    return "All day";
+    return locale.toLowerCase().startsWith("de") ? "Ganztägig" : "All day";
   }
 
   const start = new Date(event.start);
