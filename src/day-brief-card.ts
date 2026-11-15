@@ -648,7 +648,16 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       <ha-card>
         <div class="header">
           <div class="header-row">
-            <div>
+            <div
+              class="brief ${this._summarySource === "loading" || this._refreshing
+                ? "loading"
+                : ""}"
+            >
+              ${this._summarySource === "loading" && !this._summary
+                ? t(locale, "preparing")
+                : renderBriefMarkdown(this._summary)}
+            </div>
+            <div class="header-time">
               <p class="eyebrow">${t(locale, "today")}</p>
               <h2 class="title">${this._dayTitle()}</h2>
               <p class="clock" aria-live="polite">${this._clockLabel()}</p>
@@ -676,16 +685,6 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
               </button>
             </div>
           </div>
-        </div>
-
-        <div
-          class="brief ${this._summarySource === "loading" || this._refreshing
-            ? "loading"
-            : ""}"
-        >
-          ${this._summarySource === "loading" && !this._summary
-            ? t(locale, "preparing")
-            : renderBriefMarkdown(this._summary)}
         </div>
 
         <div class="split">

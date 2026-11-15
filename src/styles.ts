@@ -29,7 +29,12 @@ export const cardStyles = css`
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 12px;
+    gap: 20px;
+  }
+
+  .header-time {
+    flex: 0 0 auto;
+    text-align: right;
   }
 
   .header-actions {
@@ -102,7 +107,9 @@ export const cardStyles = css`
   }
 
   .brief {
-    margin: 0 0 14px;
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
     font-size: 1.35rem;
     line-height: 1.45;
     color: var(--primary-text-color);
@@ -121,6 +128,25 @@ export const cardStyles = css`
   }
 
   @media (max-width: 720px) {
+    .header-row {
+      flex-wrap: wrap;
+    }
+
+    .brief {
+      flex: 1 1 100%;
+      order: 1;
+    }
+
+    .header-time {
+      flex: 1 1 auto;
+      text-align: left;
+      order: 0;
+    }
+
+    .header-actions {
+      order: 0;
+    }
+
     .split {
       grid-template-columns: 1fr;
     }
