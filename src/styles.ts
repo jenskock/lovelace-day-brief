@@ -109,8 +109,8 @@ export const cardStyles = css`
   }
 
   .brief strong {
-    font-weight: 700;
-    color: var(--primary-text-color);
+    font-weight: 750;
+    color: var(--primary-color, #03a9f4);
   }
 
   .split {

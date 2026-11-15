@@ -152,7 +152,7 @@ export async function speakSummary(options: {
         throw new Error("tts_get_url returned no path");
       }
       // Prefer relative /api/tts_proxy/... so the tablet stays on the
-      // same origin (home.jenskock.de), not an internal LAN URL.
+      // same origin as the HA frontend, not an internal LAN URL.
       const playable =
         path.startsWith("http://") || path.startsWith("https://")
           ? (() => {

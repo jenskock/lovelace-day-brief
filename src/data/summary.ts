@@ -611,7 +611,7 @@ function buildLocalBrief(options: {
       const first = birthdays[0];
       parts.push(
         first.daysUntil === 0
-          ? `Heute hat ${first.name} Geburtstag (${first.ageTurning})!`
+          ? `**Heute hat ${first.name} Geburtstag (${first.ageTurning})!**`
           : `Bald Geburtstag: ${first.name} in ${first.daysUntil} Tag(en).`,
       );
     }
@@ -641,11 +641,10 @@ function buildLocalBrief(options: {
       const actions = trashActionLines(trash, now, timeZone, true);
       const urgent = actions.filter((line) => line.startsWith("AKTION"));
       if (urgent.length) {
-        parts.push(
-          urgent
-            .map((line) => line.replace(/^AKTION (HEUTE(?: ABEND)?: )/, ""))
-            .join(" "),
-        );
+        const text = urgent
+          .map((line) => line.replace(/^AKTION (HEUTE(?: ABEND)?: )/, ""))
+          .join(" ");
+        parts.push(`**${text}**`);
       }
     }
     if (windows.length) {
@@ -699,7 +698,7 @@ function buildLocalBrief(options: {
       const first = birthdays[0];
       parts.push(
         first.daysUntil === 0
-          ? `Today is ${first.name}'s birthday (${first.ageTurning})!`
+          ? `**Today is ${first.name}'s birthday (${first.ageTurning})!**`
           : `Birthday soon: ${first.name} in ${first.daysUntil} day(s).`,
       );
     }
@@ -720,13 +719,10 @@ function buildLocalBrief(options: {
       const actions = trashActionLines(trash, now, timeZone, false);
       const urgent = actions.filter((line) => line.startsWith("ACTION"));
       if (urgent.length) {
-        parts.push(
-          urgent
-            .map((line) =>
-              line.replace(/^ACTION (TODAY|TONIGHT): /, ""),
-            )
-            .join(" "),
-        );
+        const text = urgent
+          .map((line) => line.replace(/^ACTION (TODAY|TONIGHT): /, ""))
+          .join(" ");
+        parts.push(`**${text}**`);
       }
     }
     if (windows.length) {
@@ -979,8 +975,8 @@ export function buildSummaryDigest(options: {
     dataBlocks.join("\n\n"),
     "",
     german
-      ? "ANTWORT: Nur der fertige deutsche Fließtext (Markdown **fett** erlaubt), nichts sonst."
-      : "RESPONSE: Only the finished brief text (Markdown **bold** allowed), nothing else.",
+      ? "ANTWORT: Nur der fertige deutsche Fließtext. Wichtige Aktion mit **doppelten ASCII-Sternen** fett markieren, nichts sonst."
+      : "RESPONSE: Only the finished brief text. Mark important actions with **double ASCII asterisks**, nothing else.",
   ].join("\n");
 
   const local = buildLocalBrief({

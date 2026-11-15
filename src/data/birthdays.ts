@@ -106,7 +106,7 @@ export function formatBirthdayLine(
   return `- ${birthday.name}: in ${birthday.daysUntil} days (turns ${birthday.ageTurning})`;
 }
 
-/** Parse editor lines like `Ella: 2018-12-28` or `Ella,2018-12-28`. */
+/** Parse editor lines like `Name: 2018-12-28` or `Name,2018-12-28`. */
 export function parseBirthdayLines(raw: string): BirthdayConfig[] {
   const results: BirthdayConfig[] = [];
   for (const line of raw.split("\n")) {
