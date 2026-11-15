@@ -1,5 +1,6 @@
 import { DEFAULT_SUMMARY_PROMPT } from "../const";
 import { filterTodaysEvents } from "./calendar";
+import { isGermanLocale, WEATHER_LABELS_DE } from "./i18n";
 import type {
   BirthdayConfig,
   CalendarEvent,
@@ -47,24 +48,6 @@ type DayPart = "morgen" | "vormittag" | "nachmittag" | "abend" | "nacht";
 
 const summaryCache = new Map<string, CacheEntry>();
 
-const WEATHER_DE: Record<string, string> = {
-  "clear-night": "klar (Nacht)",
-  cloudy: "bewölkt",
-  fog: "neblig",
-  hail: "Hagel",
-  lightning: "Gewitter",
-  "lightning-rainy": "Gewitterregen",
-  partlycloudy: "teilweise bewölkt",
-  pouring: "stark regnerisch",
-  rainy: "regnerisch",
-  snowy: "schneeig",
-  "snowy-rainy": "Schneeregen",
-  sunny: "sonnig",
-  windy: "windig",
-  "windy-variant": "windig und bewölkt",
-  exceptional: "außergewöhnliches Wetter",
-};
-
 function simpleHash(input: string): string {
   let hash = 0;
   for (let i = 0; i < input.length; i += 1) {
@@ -75,7 +58,7 @@ function simpleHash(input: string): string {
 }
 
 function isGerman(locale: string): boolean {
-  return locale.toLowerCase().startsWith("de");
+  return isGermanLocale(locale);
 }
 
 function dayPart(now: Date, timeZone: string): DayPart {
@@ -173,7 +156,7 @@ function weatherLabel(condition: string, german: boolean): string {
     return german ? "Wetter unklar" : "Weather unavailable";
   }
   if (german) {
-    return WEATHER_DE[condition] ?? condition.replace(/_/g, " ");
+    return WEATHER_LABELS_DE[condition] ?? condition.replace(/_/g, " ");
   }
   return condition.replace(/_/g, " ");
 }

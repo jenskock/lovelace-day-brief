@@ -15,6 +15,7 @@ import {
   renderBriefMarkdown,
   stripBriefMarkdown,
 } from "./data/brief-format";
+import { t, weatherConditionLabel } from "./data/i18n";
 import {
   buildSummaryDigest,
   invalidateSummaryCache,
@@ -30,7 +31,6 @@ import {
   formatTemperature,
   readWeatherEntity,
   subscribeForecast,
-  weatherConditionLabel,
   type WeatherSnapshot,
 } from "./data/weather";
 import { cardStyles } from "./styles";
@@ -300,7 +300,9 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     const snapshot = readWeatherEntity(this.hass, entityId);
     if (!snapshot) {
       this._weather = null;
-      this._pushError(`Weather entity not found: ${entityId}`);
+      this._pushError(
+        t(this.hass?.locale?.language, "weather_missing", { id: entityId }),
+      );
       return;
     }
     this._weather = { ...snapshot, forecast: this._forecast };
@@ -313,7 +315,9 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     );
     this._entities = entities;
     for (const entityId of missing) {
-      this._pushError(`Entity not found: ${entityId}`);
+      this._pushError(
+        t(this.hass?.locale?.language, "entity_missing", { id: entityId }),
+      );
     }
   }
 
@@ -468,12 +472,18 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     if (!this._config.weather_entity) {
       errors.push("No weather_entity configured");
     } else if (!this.hass.states[this._config.weather_entity]) {
-      errors.push(`Weather entity not found: ${this._config.weather_entity}`);
+      errors.push(
+        t(this.hass.locale?.language, "weather_missing", {
+          id: this._config.weather_entity,
+        }),
+      );
     }
 
     for (const entityId of this._config.entities ?? []) {
       if (!this.hass.states[entityId]) {
-        errors.push(`Entity not found: ${entityId}`);
+        errors.push(
+          t(this.hass.locale?.language, "entity_missing", { id: entityId }),
+        );
       }
     }
 
@@ -578,7 +588,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
         <div class="header">
           <div class="header-row">
             <div>
-              <p class="eyebrow">Today</p>
+              <p class="eyebrow">${t(locale, "today")}</p>
               <h2 class="title">${this._dayTitle()}</h2>
               <p class="clock" aria-live="polite">${this._clockLabel()}</p>
             </div>
@@ -586,8 +596,8 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
               <button
                 class="icon-btn"
                 type="button"
-                title="Refresh brief"
-                aria-label="Refresh brief"
+                title=${t(locale, "refresh")}
+                aria-label=${t(locale, "refresh")}
                 ?disabled=${this._refreshing}
                 @click=${this._onManualRefresh}
               >
@@ -596,8 +606,8 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
               <button
                 class="icon-btn ${this._speaking ? "active" : ""}"
                 type="button"
-                title="Read summary aloud"
-                aria-label="Read summary aloud"
+                title=${t(locale, "speak")}
+                aria-label=${t(locale, "speak")}
                 ?disabled=${!this._summary || this._summarySource === "loading"}
                 @click=${this._onSpeak}
               >
@@ -613,19 +623,19 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
             : ""}"
         >
           ${this._summarySource === "loading" && !this._summary
-            ? "Preparing your day brief…"
+            ? t(locale, "preparing")
             : renderBriefMarkdown(this._summary)}
         </div>
 
         <div class="split">
           <section class="panel">
-            <h3 class="section-title">Weather</h3>
+            <h3 class="section-title">${t(locale, "weather")}</h3>
             ${weather
               ? html`
                   <div class="weather-hero">
                     <div>
                       <p class="condition">
-                        ${weatherConditionLabel(weather.condition)}
+                        ${weatherConditionLabel(weather.condition, locale)}
                       </p>
                       <p class="weather-place">
                         ${weather.friendly_name ?? weather.entity_id}
@@ -644,7 +654,8 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
                         <div class="chips">
                           ${typeof weather.humidity === "number"
                             ? html`<span class="chip"
-                                >${weather.humidity}% humidity</span
+                                >${weather.humidity}%
+                                ${t(locale, "humidity")}</span
                               >`
                             : nothing}
                           ${typeof weather.wind_speed === "number"
@@ -674,6 +685,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
                                 <span class="forecast-cond"
                                   >${weatherConditionLabel(
                                     entry.condition ?? "",
+                                    locale,
                                   )}</span
                                 >
                               </div>
@@ -683,17 +695,18 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
                       `
                     : nothing}
                 `
-              : html`<p class="empty">Configure a weather entity to begin.</p>`}
+              : html`<p class="empty">${t(locale, "configure_weather")}</p>`}
           </section>
 
           <section class="panel">
-            <h3 class="section-title">Calendar</h3>
+            <h3 class="section-title">${t(locale, "calendar")}</h3>
             ${this._loadingEvents && this._events.length === 0
-              ? html`<p class="empty loading">Loading calendars…</p>`
+              ? html`<p class="empty loading">${t(locale, "loading_calendars")}</p>`
               : this._events.length === 0
                 ? html`<p class="empty">
-                    Nothing in the next
-                    ${this._config.horizon_hours ?? DEFAULT_HORIZON} hours.
+                    ${t(locale, "no_events", {
+                      hours: this._config.horizon_hours ?? DEFAULT_HORIZON,
+                    })}
                   </p>`
                 : html`
                     <ul class="events">
@@ -744,7 +757,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
         ${(this._config.cameras ?? []).length
           ? html`
               <section class="cameras">
-                <h3 class="section-title">Cameras</h3>
+                <h3 class="section-title">${t(locale, "cameras")}</h3>
                 <div class="camera-grid">
                   ${(this._config.cameras ?? []).map((entityId) => {
                     const src = this._cameraSrc(entityId);
@@ -760,7 +773,9 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
                               src=${src}
                               alt=${this._cameraName(entityId)}
                             />`
-                          : html`<div class="camera-missing">No feed</div>`}
+                          : html`<div class="camera-missing">
+                              ${t(locale, "no_feed")}
+                            </div>`}
                         <span class="camera-label"
                           >${this._cameraName(entityId)}</span
                         >
@@ -783,10 +798,12 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
                     this._contextOpen = !this._contextOpen;
                   }}
                 >
-                  <span class="section-title">Context</span>
+                  <span class="section-title">${t(locale, "context")}</span>
                   <span class="context-meta"
                     >${this._entities.length}
-                    ${this._entities.length === 1 ? "entity" : "entities"}</span
+                    ${this._entities.length === 1
+                      ? t(locale, "entity")
+                      : t(locale, "entities")}</span
                   >
                   <span class="context-chevron" aria-hidden="true"
                     >${this._contextOpen ? "▾" : "▸"}</span
@@ -832,7 +849,11 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
                   @click=${this._onKeepAwake}
                 >
                   <span class="keep-dot"></span>
-                  <span>${this._keepAwakeOn ? "Awake" : "Keep awake"}</span>
+                  <span
+                    >${this._keepAwakeOn
+                      ? t(locale, "keep_awake_on")
+                      : t(locale, "keep_awake")}</span
+                  >
                 </button>
               </div>
             `

@@ -77,12 +77,7 @@ export async function subscribeForecast(
   };
 }
 
-export function weatherConditionLabel(condition: string): string {
-  if (!condition || condition === "unknown" || condition === "unavailable") {
-    return "Weather unavailable";
-  }
-  return condition.replace(/_/g, " ");
-}
+export { weatherConditionLabel } from "./i18n";
 
 export function formatTemperature(
   value: number | undefined,
