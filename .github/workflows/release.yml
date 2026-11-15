@@ -1,8 +1,14 @@
 name: Release
 
+# Every push to main produces a GitHub release (HACS picks it up from there).
+# The version comes from package.json / src/const.ts. If the tag for that
+# version already exists, the patch version is bumped automatically and the
+# bump is committed back to main with [skip ci] (so this workflow does not
+# retrigger itself).
+
 on:
-  release:
-    types: [published]
+  push:
+    branches: [main]
 
 jobs:
   release:
@@ -11,13 +17,45 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: npm
+
+      - name: Resolve release version (bump patch while tag exists)
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          CURRENT=$VERSION
+          while git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null 2>&1; do
+            VERSION=$(node -e "const v='$VERSION'.split('.').map(Number); v[2]++; console.log(v.join('.'))")
+          done
+          if [ "$VERSION" != "$CURRENT" ]; then
+            node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));p.version='$VERSION';fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')"
+            sed -i.bak "s/export const CARD_VERSION = \"[^\"]*\";/export const CARD_VERSION = \"$VERSION\";/" src/const.ts
+            rm src/const.ts.bak
+            echo "bumped=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - run: npm ci
+      - run: npm run typecheck
       - run: npm run build
-      - name: Upload release asset
+
+      - name: Commit version bump (if any)
+        if: steps.version.outputs.bumped == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json src/const.ts dist/
+          git commit -m "chore: release v${{ steps.version.outputs.version }} [skip ci]"
+          git push origin main
+
+      - name: Create tag and GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
+          generate_release_notes: true
           files: dist/day-brief.js

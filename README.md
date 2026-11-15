@@ -106,6 +106,8 @@ npm run build
 
 Output: `dist/day-brief.js`
 
+Releases are automatic: every push to `main` runs `.github/workflows/release.yml`, which builds the card, creates tag `v<version>` and a GitHub release with `dist/day-brief.js` attached (HACS updates from that). The version comes from `package.json` / `src/const.ts`; if the tag already exists, CI bumps the patch version and commits it back with `[skip ci]`.
+
 ## License
 
 MIT
