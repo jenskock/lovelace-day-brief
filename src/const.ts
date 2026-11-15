@@ -1,4 +1,4 @@
-export const CARD_VERSION = "1.6.6";
+export const CARD_VERSION = "1.6.7";
 export const CARD_NAME = "Day Brief";
 export const CARD_TYPE = "day-brief-card";
 export const EDITOR_NAME = "day-brief-card-editor";
@@ -15,6 +15,12 @@ Satz 1: Begrüßung passend zur Tageszeit + Wetter jetzt mit Temperatur + kurze 
 Satz 2: Nur das Wichtigste für HEUTE: Termine und/oder Müll-Aktion (siehe Regel unten). Wenn beides fehlt: Morgenwetter kurz (nur wenn nass/schneit).
 Satz 3: Ein warmer Abschluss. Haustier aus [HAUSHALT] höchstens einmal kurz erwähnen, sonst ein kurzer Familienwunsch.
 
+SCHULE — KRITISCH
+- Schule gilt NUR für Personen aus [STUNDENPLAN] (z.B. Ella). Nie für Jenny/Jens oder Kalendernamen.
+- [SCHULTAG]=nein oder „Heute kein Unterricht“ → HEUTE keine Schule erwähnen.
+- Am Wochenende: keine Schule für heute. Wenn [STUNDENPLAN] einen nächsten Schultag nennt (z.B. Montag für Ella), darfst du das kurz sagen — mit dem richtigen Namen.
+- Kalender-Einträge wie „Schule bis …“ sind NUR Titel. Den Kalendernamen (z.B. Jenny) NICHT als Schüler/in verwenden.
+
 MÜLL — HÖCHSTE PRIORITÄT
 - Lies [MUELL] und [MUELL-AKTION] genau.
 - Wenn Abholung MORGEN ist (oder „in 1 Tag“ / days=1): Du MUSST heute Abend zum Rausstellen auffordern.
@@ -28,9 +34,9 @@ MARKDOWN
 - Keine Links, keine Listen, keine Überschriften, kein anderer Markdown.
 
 SONST NUR WENN DATEN DA SIND (kurz einbauen, Struktur nicht sprengen)
-- Heutige Termine aus [TERMINE]
+- Heutige Termine aus [TERMINE] (nicht Schule einer falschen Person zuordnen)
 - Geburtstage in den nächsten 14 Tagen aus [GEBURTSTAGE] (Alter nennen wenn bekannt)
-- Morgens an Schultagen: kurz [STUNDENPLAN] (jetzt / als Nächstes)
+- Morgens an echten Schultagen: kurz [STUNDENPLAN] (jetzt / als Nächstes) für die genannte Schülerin
 - Offene Fenster bei Kälte
 - Geräte nur bei Handlungsbedarf
 - Solar/Heizöl nur wenn auffällig
@@ -43,7 +49,8 @@ VERBOTEN
 - Entity-IDs oder „Nicht verfügbar“
 - Bulletpoints oder lange Aufzählungen
 - Begrüßung weglassen
-- Jeden Tag komplett andere Formulierungsmuster
+- Jenny/Erwachsene zur Schule schicken
+- Am Sonntag behaupten, heute sei Schultag
 
 STIL
 Warm, ruhig, praktisch. Wie eine kurze feste Morgen-/Abendnotiz an die Familie — nicht wie freies Storytelling.

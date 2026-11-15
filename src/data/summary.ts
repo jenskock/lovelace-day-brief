@@ -390,6 +390,16 @@ function calendarBirthdayHints(
     .map((event) => eventLine(event, german));
 }
 
+function isSchoolCalendarTitle(summary: string | undefined): boolean {
+  const value = (summary ?? "").toLowerCase();
+  return (
+    value.includes("schule") ||
+    value.includes("unterricht") ||
+    value.includes("school") ||
+    /\bganztag\b/.test(value)
+  );
+}
+
 function eventLine(event: CalendarEvent, german: boolean): string {
   const when = event.all_day
     ? german
@@ -397,7 +407,13 @@ function eventLine(event: CalendarEvent, german: boolean): string {
       : "all day"
     : event.start;
   const cal = event.calendar_name ? ` (${event.calendar_name})` : "";
-  return `- ${when}: ${event.summary ?? (german ? "Belegt" : "Busy")}${cal}`;
+  const summary = event.summary ?? (german ? "Belegt" : "Busy");
+  if (isSchoolCalendarTitle(event.summary)) {
+    return german
+      ? `- ${when}: ${summary}${cal} — Schultitel; Schüler/in NUR aus [STUNDENPLAN], nicht aus Kalendername`
+      : `- ${when}: ${summary}${cal} — school title; student ONLY from [SCHEDULE], not calendar name`;
+  }
+  return `- ${when}: ${summary}${cal}`;
 }
 
 function entityLine(entity: EntitySnapshot): string {
@@ -824,12 +840,13 @@ export function buildSummaryDigest(options: {
     ...calendarBirthdayHints(events, german),
   ];
   const schoolDay = isSchoolDay(now, timeZone, contextNotes, part);
-  const scheduleLines = buildSchedulePromptLines(
+  const { lines: scheduleLines, hasLessonsToday } = buildSchedulePromptLines(
     schedules,
     now,
     timeZone,
     german,
   );
+  const isSchoolToday = schoolDay || hasLessonsToday;
 
   const agendaLines =
     events.length === 0
@@ -864,13 +881,13 @@ export function buildSummaryDigest(options: {
     section(
       german ? "SCHULTAG" : "SCHOOL_DAY",
       [
-        schoolDay || scheduleLines.length
+        isSchoolToday
           ? german
-            ? "ja — Wochentag und/oder Stundenplan vorhanden"
-            : "yes — weekday and/or schedule present"
+            ? "ja — heute Unterricht laut Stundenplan"
+            : "yes — lessons today per schedule"
           : german
-            ? "nein"
-            : "no",
+            ? "nein — heute kein Unterricht (Wochenende oder kein Plan)"
+            : "no — no lessons today (weekend or empty plan)",
       ],
       "",
     ),
@@ -988,7 +1005,7 @@ export function buildSummaryDigest(options: {
     weatherLine,
     clothing,
     rainLine,
-    schoolDay,
+    schoolDay: isSchoolToday,
     birthdays: upcoming,
     events,
     people: buckets.people,

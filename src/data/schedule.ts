@@ -46,6 +46,14 @@ const WEEKDAY_DE: Record<WeekdayKey, string> = {
   sunday: "Sonntag",
 };
 
+const SCHOOL_WEEKDAYS: WeekdayKey[] = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+];
+
 function zonedWeekday(now: Date, timeZone: string): WeekdayKey {
   const weekday = new Intl.DateTimeFormat("en-US", {
     weekday: "short",
@@ -158,13 +166,42 @@ export function currentOrNextLesson(
   return { current, next };
 }
 
+function nextSchoolDayLessons(
+  schedule: DayBriefSchedule,
+  weekday: WeekdayKey,
+): { weekday: WeekdayKey; lessons: ScheduleLesson[] } | null {
+  const start = WEEKDAY_KEYS.indexOf(weekday);
+  for (let offset = 1; offset <= 7; offset += 1) {
+    const key = WEEKDAY_KEYS[(start + offset) % 7];
+    if (!SCHOOL_WEEKDAYS.includes(key)) {
+      continue;
+    }
+    const lessons = [...(schedule[key] ?? [])].sort((a, b) =>
+      a.start.localeCompare(b.start),
+    );
+    if (lessons.length) {
+      return { weekday: key, lessons };
+    }
+  }
+  return null;
+}
+
+function lastLessonEnd(lessons: ScheduleLesson[]): string | null {
+  if (!lessons.length) {
+    return null;
+  }
+  const sorted = [...lessons].sort((a, b) => a.end.localeCompare(b.end));
+  return sorted[sorted.length - 1]?.end ?? null;
+}
+
 export function buildSchedulePromptLines(
   schedules: DayBriefSchedule[],
   now: Date,
   timeZone: string,
   german: boolean,
-): string[] {
+): { lines: string[]; hasLessonsToday: boolean } {
   const lines: string[] = [];
+  let hasLessonsToday = false;
 
   for (const schedule of schedules) {
     if (!schedule.name?.trim()) {
@@ -178,8 +215,8 @@ export function buildSchedulePromptLines(
     const dayLabel = german ? WEEKDAY_DE[weekday] : weekday;
     lines.push(
       german
-        ? `Person: ${schedule.name} · ${dayLabel}`
-        : `Person: ${schedule.name} · ${dayLabel}`,
+        ? `Schüler/in: ${schedule.name} · heute ${dayLabel}`
+        : `Student: ${schedule.name} · today ${dayLabel}`,
     );
     if (schedule.note) {
       lines.push(german ? `Hinweis: ${schedule.note}` : `Note: ${schedule.note}`);
@@ -187,12 +224,43 @@ export function buildSchedulePromptLines(
 
     if (lessons.length === 0) {
       lines.push(
-        german ? "Heute kein Unterricht laut Plan." : "No lessons scheduled today.",
+        german
+          ? `Heute kein Unterricht für ${schedule.name}.`
+          : `No lessons today for ${schedule.name}.`,
       );
+      const upcoming = nextSchoolDayLessons(schedule, weekday);
+      if (upcoming) {
+        const nextLabel = german
+          ? WEEKDAY_DE[upcoming.weekday]
+          : upcoming.weekday;
+        const until = lastLessonEnd(upcoming.lessons);
+        lines.push(
+          german
+            ? `Nächster Schultag: ${nextLabel} für ${schedule.name}${until ? ` (bis ${until})` : ""}.`
+            : `Next school day: ${nextLabel} for ${schedule.name}${until ? ` (until ${until})` : ""}.`,
+        );
+        lines.push(
+          german
+            ? `Plan ${nextLabel}:`
+            : `${nextLabel} plan:`,
+        );
+        for (const lesson of upcoming.lessons.slice(0, 8)) {
+          lines.push(`- ${lesson.start}-${lesson.end}: ${lesson.subject}`);
+        }
+      }
       continue;
     }
 
+    hasLessonsToday = true;
     const { current, next } = currentOrNextLesson(lessons, now, timeZone);
+    const until = lastLessonEnd(lessons);
+    if (until) {
+      lines.push(
+        german
+          ? `Schule heute bis ${until} (${schedule.name}).`
+          : `School today until ${until} (${schedule.name}).`,
+      );
+    }
     if (current) {
       lines.push(
         german
@@ -214,7 +282,7 @@ export function buildSchedulePromptLines(
     }
   }
 
-  return lines;
+  return { lines, hasLessonsToday };
 }
 
 /** Keep type export aligned with WEEKDAY_KEYS for editors/tests. */
