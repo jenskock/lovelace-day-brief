@@ -601,7 +601,7 @@ function Se(t) {
 function A(t) {
   return Se({ ...t, state: !0, attribute: !1 });
 }
-const Bt = "1.7.3", it = "Day Brief", rt = "day-brief-card", at = "day-brief-card-editor", ot = `
+const Bt = "1.7.4", it = "Day Brief", rt = "day-brief-card", at = "day-brief-card-editor", ot = `
 Du bist ein Home-Dashboard-Redakteur für eine Familien-Tageskarte.
 
 ZIEL
