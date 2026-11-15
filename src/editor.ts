@@ -59,6 +59,7 @@ export class DayBriefCardEditor
       ...config,
       calendars: [...(config.calendars ?? [])],
       entities: [...(config.entities ?? [])],
+      cameras: [...(config.cameras ?? [])],
       birthdays: [...(config.birthdays ?? [])],
     };
   }
@@ -90,6 +91,10 @@ export class DayBriefCardEditor
 
   private _onEntities(ev: Event): void {
     this._update({ entities: parseEntityList(this._value(ev)) });
+  }
+
+  private _onCameras(ev: Event): void {
+    this._update({ cameras: parseEntityList(this._value(ev)) });
   }
 
   private _onForecast(ev: Event): void {
@@ -259,6 +264,20 @@ export class DayBriefCardEditor
           <span class="hint"
             >One entity per line. Included in the brief and shown under
             Context.</span
+          >
+        </label>
+
+        <label>
+          Cameras
+          <textarea
+            rows="4"
+            placeholder="camera.front_door&#10;camera.driveway&#10;camera.garden&#10;camera.garage"
+            .value=${(this._config.cameras ?? []).join("\n")}
+            @change=${this._onCameras}
+          ></textarea>
+          <span class="hint"
+            >Live feeds at the bottom (2×2 / 4 across on wide screens). Falls back
+            to refreshed snapshots when a camera has no stream.</span
           >
         </label>
 

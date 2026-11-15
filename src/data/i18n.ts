@@ -53,6 +53,7 @@ type UiKey =
   | "today"
   | "weather"
   | "calendar"
+  | "cameras"
   | "context"
   | "humidity"
   | "preparing"
@@ -61,17 +62,22 @@ type UiKey =
   | "loading_calendars"
   | "no_events"
   | "configure_weather"
+  | "no_feed"
   | "entity"
   | "entities"
   | "keep_awake"
   | "keep_awake_on"
   | "weather_missing"
-  | "entity_missing";
+  | "entity_missing"
+  | "camera_live"
+  | "camera_snapshot"
+;
 
 const UI_DE: Record<UiKey, string> = {
   today: "Heute",
   weather: "Wetter",
   calendar: "Kalender",
+  cameras: "Kameras",
   context: "Kontext",
   humidity: "Luftfeuchtigkeit",
   preparing: "Tagesbrief wird erstellt…",
@@ -80,18 +86,22 @@ const UI_DE: Record<UiKey, string> = {
   loading_calendars: "Kalender werden geladen…",
   no_events: "Nichts in den nächsten {hours} Stunden.",
   configure_weather: "Wetter-Entity konfigurieren, um zu starten.",
+  no_feed: "Kein Bild",
   entity: "Entity",
   entities: "Entities",
   keep_awake: "Wach halten",
   keep_awake_on: "Wachhalten an",
   weather_missing: "Wetter-Entity nicht gefunden: {id}",
   entity_missing: "Entity nicht gefunden: {id}",
+  camera_live: "Live",
+  camera_snapshot: "Snapshot",
 };
 
 const UI_EN: Record<UiKey, string> = {
   today: "Today",
   weather: "Weather",
   calendar: "Calendar",
+  cameras: "Cameras",
   context: "Context",
   humidity: "humidity",
   preparing: "Preparing your day brief…",
@@ -100,12 +110,15 @@ const UI_EN: Record<UiKey, string> = {
   loading_calendars: "Loading calendars…",
   no_events: "Nothing in the next {hours} hours.",
   configure_weather: "Configure a weather entity to begin.",
+  no_feed: "No feed",
   entity: "entity",
   entities: "entities",
   keep_awake: "Keep awake",
   keep_awake_on: "Keep awake on",
   weather_missing: "Weather entity not found: {id}",
   entity_missing: "Entity not found: {id}",
+  camera_live: "Live",
+  camera_snapshot: "Snapshot",
 };
 
 export function t(

@@ -68,10 +68,14 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
   @state() private _now = new Date();
   @state() private _speaking = false;
   @state() private _keepAwakeOn = false;
+  @state() private _cameraMode: Record<string, "stream" | "still"> = {};
+  @state() private _cameraOffline: Record<string, boolean> = {};
+  @state() private _cameraTick = 0;
 
   private _unsubForecast?: () => void;
   private _refreshTimer?: number;
   private _clockTimer?: number;
+  private _cameraStillTimer?: number;
   private _lastWeatherEntity?: string;
   private _lastForecastType?: ForecastType;
   private _fetchGeneration = 0;
@@ -82,6 +86,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       weather_entity: "weather.home",
       calendars: ["calendar.home"],
       entities: [],
+      cameras: [],
       forecast_type: "daily",
       summary_mode: "auto",
     };
@@ -103,6 +108,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       cache_minutes: DEFAULT_CACHE,
       calendars: [],
       entities: [],
+      cameras: [],
       birthdays: [],
       schedules: [],
       ...config,
@@ -117,6 +123,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     super.connectedCallback();
     this._startRefreshLoop();
     this._startClock();
+    this._startCameraStillLoop();
     document.addEventListener("visibilitychange", this._onVisibility);
   }
 
@@ -124,6 +131,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     super.disconnectedCallback();
     this._stopRefreshLoop();
     this._stopClock();
+    this._stopCameraStillLoop();
     this._teardownForecast();
     this._keepAwake.stop();
     this._keepAwakeOn = false;
@@ -166,7 +174,10 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       changed.has("_contextOpen") ||
       changed.has("_now") ||
       changed.has("_speaking") ||
-      changed.has("_keepAwakeOn")
+      changed.has("_keepAwakeOn") ||
+      changed.has("_cameraMode") ||
+      changed.has("_cameraOffline") ||
+      changed.has("_cameraTick")
     ) {
       return true;
     }
@@ -182,6 +193,14 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
         return true;
       }
       for (const entityId of this._config?.entities ?? []) {
+        if (
+          entityChanged(prev?.states?.[entityId], this.hass?.states?.[entityId])
+        ) {
+          return true;
+        }
+      }
+      // Camera access tokens rotate; re-render so feeds pick up the new token.
+      for (const entityId of this._config?.cameras ?? []) {
         if (
           entityChanged(prev?.states?.[entityId], this.hass?.states?.[entityId])
         ) {
@@ -241,6 +260,82 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       second: "2-digit",
       timeZone,
     }).format(this._now);
+  }
+
+  private _cameraName(entityId: string): string {
+    const state = this.hass?.states[entityId];
+    return (
+      this.hass?.entities?.[entityId]?.name ??
+      (typeof state?.attributes.friendly_name === "string"
+        ? state.attributes.friendly_name
+        : entityId.replace(/^camera\./, "").replace(/_/g, " "))
+    );
+  }
+
+  private _cameraToken(entityId: string): string | null {
+    const token = this.hass?.states[entityId]?.attributes.access_token;
+    return typeof token === "string" && token ? token : null;
+  }
+
+  private _cameraStreamSrc(entityId: string): string | null {
+    const token = this._cameraToken(entityId);
+    if (!token) {
+      return null;
+    }
+    return `/api/camera_proxy_stream/${entityId}?token=${encodeURIComponent(token)}`;
+  }
+
+  private _cameraStillSrc(entityId: string): string | null {
+    const token = this._cameraToken(entityId);
+    if (!token) {
+      return null;
+    }
+    // Cache-buster so snapshot-only cameras refresh while in still mode.
+    return `/api/camera_proxy/${entityId}?token=${encodeURIComponent(token)}&t=${this._cameraTick}`;
+  }
+
+  private _onCameraError(entityId: string): void {
+    const mode = this._cameraMode[entityId] ?? "stream";
+    if (mode === "stream") {
+      // Stream unsupported -> fall back to refreshed still snapshots.
+      this._cameraMode = { ...this._cameraMode, [entityId]: "still" };
+    } else {
+      // Still failing (camera offline) -> flag overlay, but keep retrying
+      // via the tick so the tile recovers when the camera comes back.
+      this._cameraOffline = { ...this._cameraOffline, [entityId]: true };
+    }
+  }
+
+  private _onCameraLoad(entityId: string): void {
+    if (this._cameraOffline[entityId]) {
+      this._cameraOffline = { ...this._cameraOffline, [entityId]: false };
+    }
+  }
+
+  private _startCameraStillLoop(): void {
+    this._stopCameraStillLoop();
+    this._cameraStillTimer = window.setInterval(() => {
+      if (Object.values(this._cameraMode).includes("still")) {
+        this._cameraTick = this._cameraTick + 1;
+      }
+    }, 5000);
+  }
+
+  private _stopCameraStillLoop(): void {
+    if (this._cameraStillTimer) {
+      window.clearInterval(this._cameraStillTimer);
+      this._cameraStillTimer = undefined;
+    }
+  }
+
+  private _openMoreInfo(entityId: string): void {
+    this.dispatchEvent(
+      new CustomEvent("hass-more-info", {
+        detail: { entityId },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private _cacheKey(): string {
@@ -719,6 +814,63 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
                   `}
           </section>
         </div>
+
+        ${(this._config.cameras ?? []).length
+          ? html`
+              <section class="cameras">
+                <h3 class="section-title">${t(locale, "cameras")}</h3>
+                <div class="camera-grid">
+                  ${(this._config.cameras ?? []).map((entityId) => {
+                    const mode = this._cameraMode[entityId] ?? "stream";
+                    const offline = this._cameraOffline[entityId] === true;
+                    const state = this.hass?.states[entityId];
+                    const src =
+                      mode === "still"
+                        ? this._cameraStillSrc(entityId)
+                        : this._cameraStreamSrc(entityId);
+                    return html`
+                      <button
+                        class="camera-tile"
+                        type="button"
+                        @click=${() => this._openMoreInfo(entityId)}
+                      >
+                        ${src
+                          ? html`
+                              <img
+                                class="camera-feed"
+                                src=${src}
+                                alt=${this._cameraName(entityId)}
+                                @error=${() => this._onCameraError(entityId)}
+                                @load=${() => this._onCameraLoad(entityId)}
+                              />
+                              ${offline
+                                ? html`<div class="camera-offline">
+                                    ${t(locale, "no_feed")}${state?.state
+                                      ? ` · ${state.state}`
+                                      : ""}
+                                  </div>`
+                                : nothing}
+                              <span class="camera-badge"
+                                >${mode === "still"
+                                  ? t(locale, "camera_snapshot")
+                                  : t(locale, "camera_live")}</span
+                              >
+                            `
+                          : html`<div class="camera-missing">
+                              ${t(locale, "no_feed")}${state?.state
+                                ? ` · ${state.state}`
+                                : ""}
+                            </div>`}
+                        <span class="camera-label"
+                          >${this._cameraName(entityId)}</span
+                        >
+                      </button>
+                    `;
+                  })}
+                </div>
+              </section>
+            `
+          : nothing}
 
         ${this._entities.length
           ? html`

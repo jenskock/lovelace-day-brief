@@ -397,8 +397,92 @@ export const cardStyles = css`
     text-align: right;
   }
 
+  .cameras,
   .context {
     margin-top: 16px;
+  }
+
+  .camera-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  @media (min-width: 900px) {
+    .camera-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .camera-tile {
+    position: relative;
+    display: block;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--primary-text-color) 8%, transparent);
+    cursor: pointer;
+    aspect-ratio: 16 / 10;
+  }
+
+  .camera-feed {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .camera-missing {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    font-size: 0.85rem;
+    color: var(--secondary-text-color);
+  }
+
+  .camera-offline {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 8px;
+    font-size: 0.85rem;
+    text-align: center;
+    color: #fff;
+    background: color-mix(in srgb, #000 60%, transparent);
+  }
+
+  .camera-label {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 8px 10px 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #fff;
+    text-align: left;
+    background: linear-gradient(
+      transparent,
+      color-mix(in srgb, #000 65%, transparent)
+    );
+  }
+
+  .camera-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 650;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #fff;
+    background: color-mix(in srgb, #000 55%, transparent);
   }
 
   .footer-bar {

@@ -31,6 +31,7 @@ export interface DayBriefCardConfig {
   weather_entity?: string;
   calendars?: string[];
   entities?: string[];
+  cameras?: string[];
   birthdays?: BirthdayConfig[];
   schedules?: DayBriefSchedule[];
   forecast_type?: ForecastType;

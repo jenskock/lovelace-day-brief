@@ -61,6 +61,7 @@ agent_id: conversation.your_llm_agent
 | `weather_entity` | string | — | Weather entity for current conditions |
 | `calendars` | string[] | `[]` | Calendar entities for today’s agenda |
 | `entities` | string[] | `[]` | Extra HA entities (people, solar, trash, windows, oil, vacuum/mower, …) |
+| `cameras` | string[] | `[]` | Camera entities shown as feeds at the bottom — MJPEG stream when available, automatic fallback to refreshed still snapshots (badge shows Live/Snapshot) |
 | `birthdays` | `{name,date}[]` | `[]` | Birthdays as `YYYY-MM-DD`; surfaced if within 14 days |
 | `schedules` | object[] | `[]` | School/work timetables; today’s lessons go into the prompt |
 | `context_notes` | string | — | Free-text household context for the prompt |
@@ -77,6 +78,11 @@ agent_id: conversation.your_llm_agent
 
 Tap **↻** to refresh, **♪** to read the brief aloud.  
 **Keep awake** (footer): tap once after opening on Echo Show — plays near-silent audio so Silk stays open (no green/red banner). Auto-refresh every **15 minutes**.
+
+### Cameras
+
+- Add any HA `camera.*` entity under `cameras:` — the card tries `/api/camera_proxy_stream/` (MJPEG live) first and falls back to `/api/camera_proxy/` snapshots refreshed every 5 s when the camera has no stream. A failed tile shows an offline overlay with the entity state and **keeps retrying every 5 s**, recovering by itself when the camera comes back.
+- Note: the stock Alexa integration does **not** expose an Echo Show's built-in camera as a `camera.*` entity, and the Echo's Silk browser cannot access its own camera/mic from a dashboard page — use a regular HA camera entity (or a separate webcam) instead.
 
 ## How it works
 
