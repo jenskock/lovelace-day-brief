@@ -5,6 +5,8 @@ AI-first Home Assistant Lovelace card for today: weather, meetings, household co
 ![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.4%2B-blue.svg)
 
+![Day Brief Card screenshot](https://raw.githubusercontent.com/jenskock/lovelace-day-brief/main/docs/images/screenshot.png)
+
 ## Install (HACS)
 
 1. HACS → **Frontend** → ⋮ → **Custom repositories**
