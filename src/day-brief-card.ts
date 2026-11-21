@@ -80,6 +80,8 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
   private _lastForecastType?: ForecastType;
   private _fetchGeneration = 0;
   private _keepAwake = new KeepAwakeController();
+  /** User turned keep-awake off for this session; don't auto-restart. */
+  private _keepAwakeUserDisabled = false;
 
   public static getStubConfig(): DayBriefCardConfig {
     return {
@@ -124,6 +126,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     this._startRefreshLoop();
     this._startClock();
     this._startCameraStillLoop();
+    this._ensureKeepAwake();
     document.addEventListener("visibilitychange", this._onVisibility);
   }
 
@@ -135,6 +138,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     this._teardownForecast();
     this._keepAwake.stop();
     this._keepAwakeOn = false;
+    this._keepAwakeUserDisabled = false;
     stopSpeaking();
     document.removeEventListener("visibilitychange", this._onVisibility);
   }
@@ -151,6 +155,12 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     }
 
     if (changed.has("_config") && this.isConnected) {
+      if (this._config.keep_awake === false) {
+        this._keepAwake.stop();
+        this._keepAwakeOn = false;
+      } else {
+        this._ensureKeepAwake();
+      }
       void this._refreshData(true);
     }
   }
@@ -215,11 +225,23 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     if (document.visibilityState === "visible") {
       this._now = new Date();
       this._startClock();
+      this._ensureKeepAwake();
       void this._refreshData(false);
     } else {
       this._stopClock();
     }
   };
+
+  /** Start silent keep-awake audio when enabled (default on). */
+  private _ensureKeepAwake(): void {
+    if (this._config?.keep_awake === false || this._keepAwakeUserDisabled) {
+      return;
+    }
+    if (this._keepAwakeOn) {
+      return;
+    }
+    this._keepAwakeOn = this._keepAwake.start();
+  }
 
   private _startRefreshLoop(): void {
     this._stopRefreshLoop();
@@ -495,8 +517,10 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     if (this._keepAwakeOn) {
       this._keepAwake.stop();
       this._keepAwakeOn = false;
+      this._keepAwakeUserDisabled = true;
       return;
     }
+    this._keepAwakeUserDisabled = false;
     this._keepAwakeOn = this._keepAwake.start();
   }
 
@@ -929,7 +953,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
                   type="button"
                   title=${this._keepAwakeOn
                     ? "Keep-awake active (tap to stop)"
-                    : "Tap once to keep Echo Show / Silk open"}
+                    : "Keep Echo Show / Silk awake (tap to start)"}
                   @click=${this._onKeepAwake}
                 >
                   <span class="keep-dot"></span>

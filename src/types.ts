@@ -45,7 +45,7 @@ export interface DayBriefCardConfig {
   tts_entity?: string;
   /** Optional extra media_player to also announce on. */
   tts_media_player?: string;
-  /** Play subtle silent audio after tap so Echo Show / Silk stays open. */
+  /** Silent keep-awake audio for Echo Show / Silk (default on; set false to hide). */
   keep_awake?: boolean;
 }
 

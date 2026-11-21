@@ -77,7 +77,7 @@ agent_id: conversation.your_llm_agent
 | `title` | string | — | Optional card title override |
 
 Tap **↻** to refresh, **♪** to read the brief aloud.  
-**Keep awake** (footer): tap once after opening on Echo Show — plays near-silent audio so Silk stays open (no green/red banner). Auto-refresh every **15 minutes**.
+**Keep awake** (footer): on by default — plays near-silent audio so Echo Show / Silk stays open (no green/red banner). Tap to turn off for the session. Auto-refresh every **15 minutes**.
 
 ### Cameras
 

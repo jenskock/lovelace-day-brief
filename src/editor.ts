@@ -415,7 +415,7 @@ export class DayBriefCardEditor
             .checked=${this._config.keep_awake !== false}
             @change=${this._onKeepAwake}
           />
-          <span>Show Echo keep-awake control</span>
+          <span>Echo Show keep-awake (on by default)</span>
         </label>
 
       </div>
