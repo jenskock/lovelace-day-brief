@@ -36,16 +36,37 @@ function calendarDisplayName(hass: HomeAssistant, entityId: string): string {
   );
 }
 
-export async function fetchCalendarEvents(
-  hass: HomeAssistant,
-  calendars: string[],
-  horizonHours: number,
-): Promise<{ events: CalendarEvent[]; errors: string[] }> {
-  const unique = [...new Set(calendars.filter(Boolean))];
-  if (unique.length === 0) {
-    return { events: [], errors: [] };
-  }
+const CALENDAR_RETRY_DELAYS_MS = [0, 500, 1500];
 
+const TRANSIENT_CALENDAR_ERROR =
+  /unavailable|not available|not ready|timeout|timed out|connection|no response|failed to (load|perform)/i;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+function isTransientCalendarFailure(errors: string[]): boolean {
+  return (
+    errors.length > 0 &&
+    errors.every((message) => TRANSIENT_CALENDAR_ERROR.test(message))
+  );
+}
+
+function calendarsSeemReady(hass: HomeAssistant, entityIds: string[]): boolean {
+  return entityIds.every((entityId) => {
+    const state = hass.states[entityId]?.state;
+    return Boolean(state) && state !== "unavailable" && state !== "unknown";
+  });
+}
+
+async function fetchCalendarEventsOnce(
+  hass: HomeAssistant,
+  unique: string[],
+  horizonHours: number,
+  notifyOnError: boolean,
+): Promise<{ events: CalendarEvent[]; errors: string[] }> {
   const errors: string[] = [];
   let response: Record<string, { events?: RawCalendarEvent[]; error?: string }> =
     {};
@@ -58,7 +79,7 @@ export async function fetchCalendarEvents(
         duration: { hours: horizonHours },
       },
       { entity_id: unique },
-      true,
+      notifyOnError,
       true,
     );
 
@@ -111,6 +132,60 @@ export async function fetchCalendarEvents(
 
   events.sort((a, b) => a.start.localeCompare(b.start));
   return { events, errors };
+}
+
+export async function fetchCalendarEvents(
+  hass: HomeAssistant,
+  calendars: string[],
+  horizonHours: number,
+): Promise<{ events: CalendarEvent[]; errors: string[] }> {
+  const unique = [...new Set(calendars.filter(Boolean))];
+  if (unique.length === 0) {
+    return { events: [], errors: [] };
+  }
+
+  let last: { events: CalendarEvent[]; errors: string[] } = {
+    events: [],
+    errors: [],
+  };
+
+  for (let attempt = 0; attempt < CALENDAR_RETRY_DELAYS_MS.length; attempt++) {
+    const delay = CALENDAR_RETRY_DELAYS_MS[attempt];
+    if (delay > 0) {
+      await sleep(delay);
+    }
+
+    // Wait briefly if calendar entities are still unavailable after HA/dashboard boot.
+    if (
+      attempt < CALENDAR_RETRY_DELAYS_MS.length - 1 &&
+      !calendarsSeemReady(hass, unique)
+    ) {
+      last = {
+        events: [],
+        errors: unique.map(
+          (entityId) => `${entityId}: calendar not available yet`,
+        ),
+      };
+      continue;
+    }
+
+    const notifyOnError = attempt === CALENDAR_RETRY_DELAYS_MS.length - 1;
+    last = await fetchCalendarEventsOnce(
+      hass,
+      unique,
+      horizonHours,
+      notifyOnError,
+    );
+
+    if (last.errors.length === 0) {
+      return last;
+    }
+    if (!isTransientCalendarFailure(last.errors)) {
+      return last;
+    }
+  }
+
+  return last;
 }
 
 /** Local calendar day key YYYY-MM-DD in the given time zone. */

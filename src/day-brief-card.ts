@@ -82,6 +82,8 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
   private _keepAwake = new KeepAwakeController();
   /** User turned keep-awake off for this session; don't auto-restart. */
   private _keepAwakeUserDisabled = false;
+  /** First successful data pull after hass became available. */
+  private _bootstrapped = false;
 
   public static getStubConfig(): DayBriefCardConfig {
     return {
@@ -139,6 +141,7 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     this._keepAwake.stop();
     this._keepAwakeOn = false;
     this._keepAwakeUserDisabled = false;
+    this._bootstrapped = false;
     stopSpeaking();
     document.removeEventListener("visibilitychange", this._onVisibility);
   }
@@ -161,6 +164,12 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
       } else {
         this._ensureKeepAwake();
       }
+      void this._refreshData(true);
+      return;
+    }
+
+    // connectedCallback often runs before hass is set — load once it arrives.
+    if (changed.has("hass") && this.isConnected && !this._bootstrapped) {
       void this._refreshData(true);
     }
   }
@@ -538,42 +547,48 @@ export class DayBriefCard extends LitElement implements LovelaceCard {
     this._syncWeatherFromHass();
     this._syncEntitiesFromHass();
 
-    const calendars = this._config.calendars ?? [];
-    const horizon = this._config.horizon_hours ?? DEFAULT_HORIZON;
-    const { events, errors: calendarErrors } = await fetchCalendarEvents(
-      this.hass,
-      calendars,
-      horizon,
-    );
-
-    if (generation !== this._fetchGeneration) {
-      return;
-    }
-
-    this._events = events;
-    errors.push(...calendarErrors);
-    this._loadingEvents = false;
-
-    if (!this._config.weather_entity) {
-      errors.push("No weather_entity configured");
-    } else if (!this.hass.states[this._config.weather_entity]) {
-      errors.push(
-        t(this.hass.locale?.language, "weather_missing", {
-          id: this._config.weather_entity,
-        }),
+    try {
+      const calendars = this._config.calendars ?? [];
+      const horizon = this._config.horizon_hours ?? DEFAULT_HORIZON;
+      const { events, errors: calendarErrors } = await fetchCalendarEvents(
+        this.hass,
+        calendars,
+        horizon,
       );
-    }
 
-    for (const entityId of this._config.entities ?? []) {
-      if (!this.hass.states[entityId]) {
+      if (generation !== this._fetchGeneration) {
+        return;
+      }
+
+      this._events = events;
+      errors.push(...calendarErrors);
+      this._bootstrapped = true;
+
+      if (!this._config.weather_entity) {
+        errors.push("No weather_entity configured");
+      } else if (!this.hass.states[this._config.weather_entity]) {
         errors.push(
-          t(this.hass.locale?.language, "entity_missing", { id: entityId }),
+          t(this.hass.locale?.language, "weather_missing", {
+            id: this._config.weather_entity,
+          }),
         );
       }
-    }
 
-    this._errors = [...new Set(errors)].slice(-6);
-    await this._refreshSummary(forceSummary, forceAi);
+      for (const entityId of this._config.entities ?? []) {
+        if (!this.hass.states[entityId]) {
+          errors.push(
+            t(this.hass.locale?.language, "entity_missing", { id: entityId }),
+          );
+        }
+      }
+
+      this._errors = [...new Set(errors)].slice(-6);
+      await this._refreshSummary(forceSummary, forceAi);
+    } finally {
+      if (generation === this._fetchGeneration) {
+        this._loadingEvents = false;
+      }
+    }
   }
 
   private async _refreshSummary(
